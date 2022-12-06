@@ -10,10 +10,11 @@ import torch.nn as nn
 
 networks = {
 	'mnist': {
-		'face_encoder': NotImplemented, # nn.Sequential or something
-		'image_encoder': NotImplemented,
-		'image_decoder': NotImplemented,
-		'discriminator': NotImplemented,
+		'face_encoder': NotImplemented, # nn.Sequential or something: CNN: 28x28x1 --> 2
+		'image_encoder': NotImplemented, # FCNN: 28x28x1 --> some feature map (maybe 7x7x8)
+		'image_decoder': NotImplemented, # FCNN: (feature map) x 2 --> 28x28x1
+		'discriminator1': NotImplemented, # CNN: (28x28x1) --> 1
+		'discriminator2': NotImplemented, # CNN: (28x28x1) x 2	--> 2
 	}
 }
 
@@ -23,7 +24,8 @@ class BertonGan():
 		self.face_encoder = networks[type]['face_encoder']
 		self.image_encoder = networks[type]['image_encoder']
 		self.image_decoder = networks[type]['image_decoder']
-		self.discriminator = networks[type]['discriminator']
+		self.discriminator1 = networks[type]['discriminator1']
+		self.discriminator2 = networks[type]['discriminator2']
 		
 	
 	def load_weights(self):
