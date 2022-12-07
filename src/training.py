@@ -3,13 +3,17 @@ import torch
 from torch.optim import SGD 
 from torch.nn.functional import mse_loss
 
-
 def _get_optimizer_options(optimizer_options):
+	'''
+	if a learning rate is not specified, it is set to `1e-4`,
+	then updated `optimizer_options` dict is returned
+	'''
 	for optim_name in ['face_encoder', 'image_decoder', 'discriminator']:
 		if optim_name not in optimizer_options.keys():
 			optimizer_options[optim_name] = {'lr': 1e-4}
 	return optimizer_options
 
+# square losses for the network
 _square_losses = {
 	'face_encoder': lambda C_A, C_A_fake, C_B: 
 		(mse_loss(C_A, torch.ones_like(C_A)) + mse_loss(C_A_fake, torch.ones_like(C_A_fake)) + mse_loss(C_B, torch.zeros_like(C_B))) / 3,
@@ -53,8 +57,10 @@ def _forward_fake(gan, data, h_F=None):
 def _forward_real(gan, data, h_F=None):
 	'''
 	computes discriminator output for real images
-	input: gan and data (f_A, I_A, I_B)
-	output: R_A, R_B, C_A, C_B
+	input: 
+		- gan: a BertonGan instance
+		- data: batch of (f_A, I_A, I_B)
+	output: R_A, R_B, C_A, C_B quantities
 	'''
 	f_A, I_A, I_B = data
 	if h_F is None:
@@ -75,14 +81,14 @@ def _train_one_epoch(
 	D_optim=None,
 ):
 	'''
-	function that trains a network for one epoch
+	function that trains a network for one epoch.
+	If F_optim, G_optim, or D_optim are `None`, then that network is skipped for backprop.
 	'''
 	F_loss_total, G_loss_total, D_loss_total = 0, 0, 0
 	for i, data in enumerate(dataloader):
-		# compute quantities
 		f_A, I_A, I_B = data
-		# backprop and update
 		h_F = gan.face_encoder(f_A)
+		# backprop on the face encoder
 		if F_optim:
 			F_optim.zero_grad()
 			I_A_fake, I_B_fake, R_A_fake, R_B_fake, C_A_fake, C_B_fake = _forward_fake(gan, data, h_F)
@@ -92,6 +98,7 @@ def _train_one_epoch(
 			F_optim.step()
 			F_loss_total += F_loss
 		h_F = h_F.detach()
+		# backprop on the image encoder and decoder
 		if G_optim:
 			G_optim.zero_grad()
 			I_A_fake, I_B_fake, R_A_fake, R_B_fake, C_A_fake, C_B_fake = _forward_fake(gan, data, h_F)
@@ -102,6 +109,7 @@ def _train_one_epoch(
 			G_loss.backward()
 			G_optim.step()
 			G_loss_total += G_loss
+		# backprop on the discriminators
 		if D_optim:
 			D_optim.zero_grad()
 			if F_optim or G_optim:
@@ -111,12 +119,12 @@ def _train_one_epoch(
 				R_B_fake = gan.discriminator1(I_B_fake)
 			else:
 				I_A_fake, I_B_fake, R_A_fake, R_B_fake, C_A_fake, C_B_fake = _forward_fake(gan, data, h_F)
-
 			R_A, R_B, C_A, C_B = _forward_real(gan, data, h_F)
 			D_loss = losses['discriminator'](R_A, R_B, C_A, R_A_fake, R_B_fake, C_B)
 			D_loss.backward()
 			D_optim.step()
 			D_loss_total += D_loss
+	# return all our losses
 	return F_loss_total, G_loss_total, D_loss_total	
 
 def train_all_at_once(
@@ -129,9 +137,19 @@ def train_all_at_once(
 	evaluator=None
 ):
 	'''
-	trains the gan by training each network simultaneously (unstable)
+	trains the gan by training each network simultaneously (possibly less stable)
+	inputs:
+	- berton_gan: a BertonGan instance
+	- dataloader: a dataloader specific for BertonGan training
+	- epochs: integer number of epochs (optional)
+	- optimizer: a class of optimizer (i.e. `torch.optim.SGD`)
+	- verbose: boolean that specifies whether to print at each epoch
+	- evaluator: a function that takes in a berton_gan and outputs a number,
+		will be run on the berton_gan at each iteration, to evaluate it.
 	returns:
-		- data on training
+	- dict of epoch training (keys are integer of epoch 0, ..., epochs - 1)
+		and values are another dict with losses and the value of an optional
+		evaluator function (if specified)
 	'''
 	# construct our optimizers
 	optimizer_options = _get_optimizer_options(optimizer_options)
