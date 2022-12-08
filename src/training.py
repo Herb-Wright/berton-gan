@@ -2,6 +2,7 @@
 import torch
 from torch.optim import SGD 
 from torch.nn.functional import mse_loss
+import time
 
 def _get_optimizer_options(optimizer_options):
 	'''
@@ -12,6 +13,7 @@ def _get_optimizer_options(optimizer_options):
 		if optim_name not in optimizer_options.keys():
 			optimizer_options[optim_name] = {'lr': 1e-4}
 	return optimizer_options
+
 
 # square losses for the network
 _square_losses = {
@@ -35,9 +37,11 @@ _square_losses = {
 def _forward_fake(gan, data, h_F=None):
 	'''
 	computes forward pass on network from images to discriminator (fake)
+
 	input
 		- gan: a BertonGan instance
 		- data: a batch from dataloader
+		
 	output:
 		- I_A_fake, I_B_fake, R_A_fake, R_B_fake, C_A_fake, C_B_fake quantities
 	'''
@@ -54,12 +58,15 @@ def _forward_fake(gan, data, h_F=None):
 	C_B_fake = gan.discriminator2(I_B_fake, h_F)
 	return I_A_fake, I_B_fake, R_A_fake, R_B_fake, C_A_fake, C_B_fake
 
+
 def _forward_real(gan, data, h_F=None):
 	'''
 	computes discriminator output for real images
+
 	input: 
 		- gan: a BertonGan instance
 		- data: batch of (f_A, I_A, I_B)
+
 	output: R_A, R_B, C_A, C_B quantities
 	'''
 	f_A, I_A, I_B = data
@@ -71,6 +78,7 @@ def _forward_real(gan, data, h_F=None):
 	C_B = gan.discriminator2(I_B, h_F)
 	return R_A, R_B, C_A, C_B
 	
+
 def _train_one_epoch(
 	gan, 
 	dataloader, 
@@ -127,6 +135,7 @@ def _train_one_epoch(
 	# return all our losses
 	return F_loss_total, G_loss_total, D_loss_total	
 
+
 def train_all_at_once(
 	berton_gan, 
 	dataloader, 
@@ -138,6 +147,7 @@ def train_all_at_once(
 ):
 	'''
 	trains the gan by training each network simultaneously (possibly less stable)
+
 	inputs:
 	- berton_gan: a BertonGan instance
 	- dataloader: a dataloader specific for BertonGan training
@@ -146,6 +156,7 @@ def train_all_at_once(
 	- verbose: boolean that specifies whether to print at each epoch
 	- evaluator: a function that takes in a berton_gan and outputs a number,
 		will be run on the berton_gan at each iteration, to evaluate it.
+
 	returns:
 	- dict of epoch training (keys are integer of epoch 0, ..., epochs - 1)
 		and values are another dict with losses and the value of an optional
@@ -167,6 +178,7 @@ def train_all_at_once(
 	for epoch in range(epochs):
 		if verbose:
 			print(f'epoch {epoch}')
+			start = time.time()
 		# do the epoch
 		F_loss, G_loss, D_loss = _train_one_epoch(
 			berton_gan, 
@@ -187,12 +199,11 @@ def train_all_at_once(
 			metadata[epoch]['eval'] = eval
 		# print stuff
 		if verbose:
-			print(f'  F_loss: {F_loss}; G_loss: {G_loss}; D_loss: {D_loss}')
+			end = time.time()
+			print(f'  F_loss: {F_loss}; G_loss: {G_loss}; D_loss: {D_loss}; time elapsed: {start - end}')
 			if evaluator:
 				print(f'  Evaluation: {eval}')
 	return metadata
-
-
 
 
 def train_rotate(
@@ -205,8 +216,11 @@ def train_rotate(
 	verbose=False
 ):
 	'''
+	NOTE: NOT IMPLEMENTED YET
 	trains the gan one network at a time (maybe more stable)
+
 	returns:
+
 		- data on training
 	'''
 	raise NotImplementedError
