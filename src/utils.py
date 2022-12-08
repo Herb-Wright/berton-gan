@@ -21,5 +21,8 @@ def load_mnist_data():
                           	shuffle=True, drop_last=True, num_workers=2)
 
 
+def load_msceleb():
+	pass
+
 
 
