@@ -1,6 +1,6 @@
 
-# useful utilities
-from utils import load_mnist_data
+# useful data utilities
+from data_utils import download_mnist_data, MnistLoader
 
 # the BertonGan networks
 from networks import BertonGan
