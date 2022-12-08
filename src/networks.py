@@ -77,6 +77,17 @@ class BertonGan():
     		nn.Linear(4*4*64,2)
   		)
 	
+	def image_encoder():
+		'''
+		1. Convolutional layer with 8 filters, 3x3 size, padding 1, stride 1
+		2. ReLU
+		3. 2x2 Max pooling layer stride 2
+		4. Convolutional layer with 16 filters 3x3 size, padding 1, stride 1
+		5. ReLU
+		6. 2x2 Max pooling layer stride 2
+		'''
+
+	
 class Flatten(nn.Module):
 	def forward(self, x):
 		N, C, H, W = x.size()
