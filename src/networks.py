@@ -84,8 +84,22 @@ class BertonGan():
 		3. 2x2 Max pooling layer stride 2
 		4. Convolutional layer with 16 filters 3x3 size, padding 1, stride 1
 		5. ReLU
-		6. 2x2 Max pooling layer stride 2
+		6. Convolutional layer with 32 filters 3x3 size, padding 1, stride 1
+		7. ReLU
+		8. 2x2 Max pooling layer stride 2
+
+		Output is a 7x7x32 tensor
 		'''
+		return nn.Sequential(
+			nn.Conv2d(1, 8, 3, 1, 1),
+			nn.ReLU(0.01),
+			nn.MaxPool2d(2, 2),
+			nn.Conv2d(8, 16, 3, 1, 1),
+			nn.ReLU(0.01),
+			nn.Conv2d(16, 32, 3, 1, 1),
+			nn.ReLU(0.01),
+			nn.MaxPool2d(2,2)
+		)
 
 	
 class Flatten(nn.Module):
