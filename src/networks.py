@@ -101,6 +101,11 @@ class BertonGan():
 			nn.MaxPool2d(2,2)
 		)
 
+	def celeb_face_encoder():
+		'''
+		Builds face encoder for celeb dataset
+		'''
+
 	
 class Flatten(nn.Module):
 	def forward(self, x):
