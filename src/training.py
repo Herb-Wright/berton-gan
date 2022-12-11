@@ -3,6 +3,7 @@ import torch
 from torch.optim import SGD 
 from torch.nn.functional import mse_loss
 import time
+from tqdm import tqdm
 
 def _get_optimizer_options(optimizer_options):
 	'''
@@ -11,7 +12,7 @@ def _get_optimizer_options(optimizer_options):
 	'''
 	for optim_name in ['face_encoder', 'image_decoder', 'discriminator']:
 		if optim_name not in optimizer_options.keys():
-			optimizer_options[optim_name] = {'lr': 1e-4}
+			optimizer_options[optim_name] = {'lr': 5e-3}
 	return optimizer_options
 
 
@@ -83,17 +84,25 @@ def _train_one_epoch(
 	gan, 
 	dataloader, 
 	losses=_square_losses,
-	dist_func=(lambda x, y: torch.square(x - y).sum()),
+	dist_func=(lambda x, y: mse_loss(x, y)),
 	F_optim=None, 
 	G_optim=None, 
 	D_optim=None,
+	verbose=False,
+	epoch_num=None,
 ):
 	'''
 	function that trains a network for one epoch.
 	If F_optim, G_optim, or D_optim are `None`, then that network is skipped for backprop.
 	'''
 	F_loss_total, G_loss_total, D_loss_total = 0, 0, 0
-	for i, data in enumerate(dataloader):
+	for i, data in tqdm(
+		enumerate(dataloader), 
+		total=len(dataloader), 
+		disable=(not verbose),
+		desc=f'epoch {epoch_num}',
+		ncols=100,
+	):
 		f_A, I_A, I_B = data
 		h_F = gan.face_encoder(f_A)
 		# backprop on the face encoder
@@ -143,7 +152,8 @@ def train_all_at_once(
 	optimizer=SGD, 
 	optimizer_options={},
 	verbose=False,
-	evaluator=None
+	evaluator=None,
+	epochs_start=0
 ):
 	'''
 	trains the gan by training each network simultaneously (possibly less stable)
@@ -176,9 +186,8 @@ def train_all_at_once(
 	metadata = {}
 	# train the network
 	for epoch in range(epochs):
-		if verbose:
-			print(f'epoch {epoch}')
-			start = time.time()
+		# if verbose:
+			# print(f'epoch {epoch + epochs_start}')
 		# do the epoch
 		F_loss, G_loss, D_loss = _train_one_epoch(
 			berton_gan, 
@@ -186,6 +195,8 @@ def train_all_at_once(
 			F_optim=F_optim,
 			G_optim=G_optim,
 			D_optim=D_optim,
+			epoch_num=(epoch + epochs_start),
+			verbose=verbose
 		)
 		# log data
 		metadata[epoch]  = {
@@ -194,13 +205,12 @@ def train_all_at_once(
 			'D_loss': D_loss,
 		}
 		if evaluator:
-			with torch.no_grad:
+			with torch.no_grad():
 				eval = evaluator(berton_gan)
 			metadata[epoch]['eval'] = eval
 		# print stuff
 		if verbose:
-			end = time.time()
-			print(f'  F_loss: {F_loss}; G_loss: {G_loss}; D_loss: {D_loss}; time elapsed: {start - end}')
+			print(f'  F_loss: {F_loss}; G_loss: {G_loss}; D_loss: {D_loss};')
 			if evaluator:
 				print(f'  Evaluation: {eval}')
 	return metadata

@@ -3,6 +3,7 @@ import torch
 import torchvision.transforms as T
 import torchvision.datasets as dset
 import os
+import math
 
 # CONSTANTS
 
@@ -28,8 +29,9 @@ def download_mnist_data(path=DATA_PATH, train=True):
 # http://umdfaces.io/
 # http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html <-- this one is another celeb dataset
 # https://www.robots.ox.ac.uk/~vgg/data/vgg_face2/
-def download_msceleb():
-	pass
+def download_msceleb(path=DATA_PATH, train=True):
+	celeba = dset.CelebA(path, split=('train' if train else 'test'), download=True, transform=T.ToTensor())
+	return celeba
 
 
 # DATA LOADERS FOR CONSTRUCTING BATCHES
@@ -63,7 +65,7 @@ class MnistLoader:
 		self.encoder_amount = encoder_amount
 		self.device = device
 		self.transform = T.Compose(
-			[T.PILToTensor(), transform] if transform else [T.PILToTensor()]
+			[T.ToTensor(), transform] if transform else [T.ToTensor()]
 		)
 		self.data_set = dset.MNIST(path, train=train)
 
@@ -71,6 +73,9 @@ class MnistLoader:
 		'''starts MnistLoader iterator'''
 		self.count = 0
 		return self
+
+	def __len__(self):
+		return math.ceil(self.data_length / (2 * self.batch_size + self.encoder_amount))
 
 	def __next__(self):
 		'''
@@ -101,9 +106,9 @@ class MnistLoader:
 				elif len(I_B) < self.batch_size:
 					I_B.append(self.transform(x_i))
 		self.count += 2 * self.batch_size + self.encoder_amount
-		F_A = torch.stack(F_A).to(self.device)
-		I_A = torch.stack(I_A).to(self.device)
-		I_B = torch.stack(I_B).to(self.device)
+		F_A = torch.stack(F_A).to(self.device).float()
+		I_A = torch.stack(I_A).to(self.device).float()
+		I_B = torch.stack(I_B).to(self.device).float()
 		return (F_A, I_A, I_B)
 
 
@@ -111,8 +116,9 @@ class MnistLoader:
 if __name__ == '__main__':
 
 	# test loading in data
-	print('  TEST download_mnist_data')
+	print('  TEST download_mnist_data and download_msceleb')
 	download_mnist_data()
+	download_msceleb()
 	print('    function runs without error')
 	print('  ...PASSED')
 
@@ -128,6 +134,14 @@ if __name__ == '__main__':
 		if i >= 5:
 			break
 	print('    MnistLoader returns batch with correct shape')
+	for i, data in enumerate(dataloader):
+		f_A, I_A, I_B = data
+		assert(f_A.dtype == torch.float)
+		assert(I_A.dtype == torch.float)
+		assert(I_B.dtype == torch.float)
+		if i >= 5:
+			break
+	print('    MnistLoader returns batch with correct datatype')
 	import time
 	start = time.time()
 	my_num = 0
