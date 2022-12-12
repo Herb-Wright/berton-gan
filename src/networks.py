@@ -5,6 +5,8 @@ this file defines our main networks
 import torch
 import torch.nn as nn
 
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 
 class ConcatHelper(nn.Module):
 		def __init__(self, network):
@@ -139,13 +141,13 @@ networks = {
 }
 
 class BertonGan():
-	def __init__(self, type:str='mnist'):
+	def __init__(self, type:str='mnist', device=DEVICE):
 		self.type = type
-		self.face_encoder:nn.Module = networks[type]['face_encoder']
-		self.image_encoder:nn.Module = networks[type]['image_encoder']
-		self.image_decoder:nn.Module = networks[type]['image_decoder']
-		self.discriminator1:nn.Module = networks[type]['discriminator1']
-		self.discriminator2:nn.Module = networks[type]['discriminator2']
+		self.face_encoder:nn.Module = networks[type]['face_encoder'].to(device)
+		self.image_encoder:nn.Module = networks[type]['image_encoder'].to(device)
+		self.image_decoder:nn.Module = networks[type]['image_decoder'].to(device)
+		self.discriminator1:nn.Module = networks[type]['discriminator1'].to(device)
+		self.discriminator2:nn.Module = networks[type]['discriminator2'].to(device)
 		
 	def eval(self):
 		self.face_encoder.eval()

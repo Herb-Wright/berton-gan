@@ -7,6 +7,7 @@ with files
 import sys
 import os
 import torch
+from typing import Tuple
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -65,7 +66,7 @@ def save_checkpoint(gan:BertonGan, checkpoint:dict, checkpoint_name:str, path:st
 	create_dir_if_not_exists(dir)
 	torch.save(checkpoint, os.path.join(dir, 'checkpoint.pt'))
 
-def load_checkpoint(checkpoint_name:str, path:str=MODELS_PATH) -> tuple[BertonGan, dict]:
+def load_checkpoint(checkpoint_name:str, path:str=MODELS_PATH) -> Tuple[BertonGan, dict]:
 	'''
 	loads a checkpoint
 
