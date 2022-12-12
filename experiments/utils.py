@@ -8,6 +8,8 @@ import sys
 import os
 import torch
 
+DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src import BertonGan
 
@@ -39,11 +41,11 @@ def save_berton_gan(gan:BertonGan, name:str, path:str=MODELS_PATH, type:str='tor
 def load_berton_gan(name:str, path:str=MODELS_PATH) -> BertonGan:
 	dir = os.path.join(path, name)
 	berton_gan = BertonGan('empty')
-	berton_gan.face_encoder = torch.jit.load(os.path.join(dir, 'face_encoder.pt'))
-	berton_gan.image_encoder = torch.jit.load(os.path.join(dir, 'image_encoder.pt'))
-	berton_gan.image_decoder = torch.jit.load(os.path.join(dir, 'image_decoder.pt'))
-	berton_gan.discriminator1 = torch.jit.load(os.path.join(dir, 'discriminator1.pt'))
-	berton_gan.discriminator2 = torch.jit.load(os.path.join(dir, 'discriminator2.pt'))
+	berton_gan.face_encoder = torch.jit.load(os.path.join(dir, 'face_encoder.pt')).to(DEVICE)
+	berton_gan.image_encoder = torch.jit.load(os.path.join(dir, 'image_encoder.pt')).to(DEVICE)
+	berton_gan.image_decoder = torch.jit.load(os.path.join(dir, 'image_decoder.pt')).to(DEVICE)
+	berton_gan.discriminator1 = torch.jit.load(os.path.join(dir, 'discriminator1.pt')).to(DEVICE)
+	berton_gan.discriminator2 = torch.jit.load(os.path.join(dir, 'discriminator2.pt')).to(DEVICE)
 	return berton_gan
 
 def save_checkpoint(gan:BertonGan, checkpoint:dict, checkpoint_name:str, path:str=MODELS_PATH):

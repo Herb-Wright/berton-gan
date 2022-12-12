@@ -75,12 +75,12 @@ def _mnist_image_encoder():
 	'''
 	return nn.Sequential(
 		nn.Conv2d(1, 8, 3, 1, 1),
-		nn.ReLU(),
+		nn.LeakyReLU(0.01),
 		nn.MaxPool2d(2, 2),
 		nn.Conv2d(8, 16, 3, 1, 1),
-		nn.ReLU(),
+		nn.LeakyReLU(0.01),
 		nn.Conv2d(16, 32, 3, 1, 1),
-		nn.ReLU(),
+		nn.LeakyReLU(0.01),
 		nn.MaxPool2d(2,2)
 	)
 
@@ -99,7 +99,8 @@ networks = {
 			nn.Conv2d(16, 16, kernel_size=3, padding='same'),
 			nn.LeakyReLU(0.01),
 			nn.ConvTranspose2d(16, 1, (4, 4), 2, padding=1),
-			nn.Tanh(),
+			# nn.Tanh(),
+			nn.Sigmoid(),
 		)), # FCNN: (feature map) x 2 --> 28x28x1
 		'discriminator1': nn.Sequential(
 			nn.Conv2d(1, 32, kernel_size=(5, 5)),
@@ -140,18 +141,25 @@ networks = {
 class BertonGan():
 	def __init__(self, type:str='mnist'):
 		self.type = type
-		self.face_encoder = networks[type]['face_encoder']
-		self.image_encoder = networks[type]['image_encoder']
-		self.image_decoder = networks[type]['image_decoder']
-		self.discriminator1 = networks[type]['discriminator1']
-		self.discriminator2 = networks[type]['discriminator2']
+		self.face_encoder:nn.Module = networks[type]['face_encoder']
+		self.image_encoder:nn.Module = networks[type]['image_encoder']
+		self.image_decoder:nn.Module = networks[type]['image_decoder']
+		self.discriminator1:nn.Module = networks[type]['discriminator1']
+		self.discriminator2:nn.Module = networks[type]['discriminator2']
 		
+	def eval(self):
+		self.face_encoder.eval()
+		self.image_encoder.eval()
+		self.image_decoder.eval()
+		self.discriminator1.eval()
+		self.discriminator2.eval()
 	
-	def load_weights(self):
-		'''
-		loads pretrained weights of the model
-		'''
-		pass
+	def train(self):
+		self.face_encoder.train()
+		self.image_encoder.train()
+		self.image_decoder.train()
+		self.discriminator1.train()
+		self.discriminator2.train()
 
 	def shares_style(self, F_A:torch.Tensor, I:torch.Tensor):
 		'''
@@ -169,6 +177,15 @@ class BertonGan():
 		output: new image similar to I, with style A
 		'''
 		pass
+
+	def generate_image_latent(self, I, h_A):
+		# self.image_encoder.eval()
+		# self.image_decoder.eval()
+		with torch.no_grad():
+			h_I = self.image_encoder(I)
+			I_fake = self.image_decoder(h_I, h_A)
+		return I_fake
+		
 
 	def face_encoder():
 		'''

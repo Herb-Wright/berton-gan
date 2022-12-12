@@ -1,6 +1,7 @@
 # from torch.utils.data import DataLoader
 import torch
 import argparse
+import time
 from tqdm import trange
 import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
@@ -11,7 +12,8 @@ from utils import model_path_exists, load_berton_gan, save_checkpoint
 BATCH_SIZE = 16
 ENCODER_AMOUNT = 3
 EPOCHS = 5
-DEFAULT_BASE_NAME = 'mnist_experiment'
+LR = 5e-3
+DEFAULT_BASE_NAME = 'mnist_experiment_herb_2'
 
 class _Evaluator():
 	def __init__(self, verbose=False):
@@ -20,26 +22,29 @@ class _Evaluator():
 		self.verbose = verbose
 	
 	def evaluate(self, gan:BertonGan, **kwargs):
+		gan.eval()
 		if self.verbose:
 			print('evaluating model...')
-		correct = 0
-		total = 0
-		# build latent vectors
-		latent_vectors = torch.zeros((10, 2))
-		train_length = len(self.train_dataset)
-		for i in trange(train_length, desc='building latent vectors for eval', ncols=90):
-			x_i, y_i = self.train_dataset[i]
-			latent_vectors[y_i] += gan.face_encoder(x_i)
-		latent_vectors = (latent_vectors * 10) / train_length
-		# evaluate
-		for i in trange(len(self.test_dataset), desc='evaluating on test set', ncols=90):
-			x_i, y_i = self.test_dataset[i]
-			scores = torch.zeros(10)
-			for i in range(10):
-				scores[i] = gan.shares_style_latent(x_i, latent_vectors[i])
-			if torch.argmax(scores) == y_i:
-				correct += 1
-			total += 1
+		with torch.no_grad():
+			correct = 0
+			total = 0
+			# build latent vectors
+			latent_vectors = torch.zeros((10, 2))
+			train_length = len(self.train_dataset)
+			for i in trange(train_length, desc='building latent vectors for eval', ncols=90):
+				x_i, y_i = self.train_dataset[i]
+				latent_vectors[y_i] += gan.face_encoder(x_i)
+			latent_vectors = (latent_vectors * 10) / train_length
+			# evaluate
+			for i in trange(len(self.test_dataset), desc='evaluating on test set', ncols=90):
+				x_i, y_i = self.test_dataset[i]
+				scores = torch.zeros(10)
+				for i in range(10):
+					scores[i] = gan.shares_style_latent(x_i, latent_vectors[i])
+				if torch.argmax(scores) == y_i:
+					correct += 1
+				total += 1
+		gan.train()
 		# return
 		if self.verbose:
 			print(f'got score {correct} / {total}')
@@ -48,11 +53,23 @@ class _Evaluator():
 				
 
 def train_mnist_gan(
-	base_name=DEFAULT_BASE_NAME,
-	epochs=EPOCHS,
-	save=True,
-	verbose=True
+	base_name:str=DEFAULT_BASE_NAME,
+	epochs:int=EPOCHS,
+	save:bool=True,
+	verbose:bool=True,
+	sleep:int=0,
 ):
+	'''
+	trains mnist network and saves it (optionally)
+
+	args:
+	- `base_name`: the name where the experiment will be stored
+	- `epochs`: the number of epochs to run the experiment
+	- `save`: whether or not to save the data
+	- `verbose`: whether or not to print out extra stuff to console
+
+	this function returns nothing.
+	'''
 	start_epoch = 0
 	# decide whether to load a BertonGan or create one
 	if(not model_path_exists(base_name + '/0')):
@@ -64,6 +81,7 @@ def train_mnist_gan(
 		if verbose:
 			print(f'loading model from epoch {start_epoch}')
 		berton_gan = load_berton_gan(base_name + f'/{start_epoch}')
+		berton_gan.train()
 		start_epoch += 1
 	# make our objects and loop for each epoch
 	evaluator = _Evaluator(verbose=verbose)
@@ -78,7 +96,8 @@ def train_mnist_gan(
 			1, 
 			evaluator=evaluator.evaluate,
 			verbose=verbose,
-			epochs_start=epoch
+			epochs_start=epoch,
+			optimizer_options={'lr': 5e-3}
 		)
 		# save our epoch data
 		if save:
@@ -88,6 +107,9 @@ def train_mnist_gan(
 				'epoch': epoch,
 				'metadata': metadata[0]
 			}, base_name + f'/{epoch}')
+		if verbose and sleep > 0:
+			print(f'sleeping for {sleep} seconds...')
+			time.sleep(sleep)
 			
 	
 
@@ -96,22 +118,32 @@ if __name__ == '__main__':
 	parser.add_argument(
 		'--base_name',
 		'-n',
-		default=DEFAULT_BASE_NAME
+		default=DEFAULT_BASE_NAME,
+		help='this is the name of the experiment (the name of the folder stuff will be stored in)',
 	)
 	parser.add_argument(
 		'--verbose',
 		'-v',
-		action='store_true'
+		action='store_true',
+		help='if present, will run program in verbose mode (more stuff printed out)',
 	)
 	parser.add_argument(
 		'--num_epochs',
 		'-e',
 		default=EPOCHS,
-		type=int
+		type=int,
+		help='the number of epochs to run',
 	)
 	parser.add_argument(
 		'--no_save',
-		action='store_true'
+		action='store_true',
+		help='if present, data from experiment will not be saved',
+	)
+	parser.add_argument(
+		'--sleep_each_epoch',
+		default=0,
+		type=int,
+		help='an amount of seconds to sleep after completing each epoch',
 	)
 
 	args = parser.parse_args()
@@ -120,6 +152,7 @@ if __name__ == '__main__':
 		args.base_name,
 		epochs=args.num_epochs,
 		save=(not args.no_save),
-		verbose=args.verbose
+		verbose=args.verbose,
+		sleep=args.sleep_each_epoch,
 	)
 
