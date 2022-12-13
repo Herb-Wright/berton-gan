@@ -1,0 +1,14 @@
+first 30:
+- lr: 1e-1
+- batch_size: 32
+- momentum: 0.5
+next 10:
+- lr: 1e-2
+- momenum: 0.9
+- normalized (to number of epochs) loss
+next 5:
+- discriminators trained only
+next 5:
+- still only discriminator, but learning rate decreased to 1e-3, no momentum
+next 5:
+- all networks trained
