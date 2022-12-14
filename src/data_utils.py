@@ -28,8 +28,11 @@ def download_mnist_data(path=DATA_PATH, train=True):
 # http://umdfaces.io/
 # http://mmlab.ie.cuhk.edu.hk/projects/CelebA.html <-- this one is another celeb dataset
 # https://www.robots.ox.ac.uk/~vgg/data/vgg_face2/
-def download_msceleb():
-	pass
+def download_msceleb(path=DATA_PATH, train=True):
+	msceleb_train = dset.CelebA(path, 'train', download=True, transform=T.ToTensor())
+	return msceleb_train
+
+# download_msceleb(DATA_PATH, True)
 
 
 # DATA LOADERS FOR CONSTRUCTING BATCHES
