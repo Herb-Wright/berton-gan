@@ -18,7 +18,13 @@ class _Evaluator():
 		self.train_dataset = download_mnist_data(train=True)
 		self.test_dataset = download_mnist_data(train=False)
 		self.verbose = verbose
-	
+		if torch.cuda.is_available():
+			device = torch.device('cuda:0')
+		else:
+			device = torch.device('cpu')
+
+		print(torch.cuda.is_available(), device)
+
 	def evaluate(self, gan:BertonGan, **kwargs):
 		if self.verbose:
 			print('evaluating model...')
