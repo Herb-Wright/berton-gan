@@ -7,7 +7,7 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src import BertonGan, train_all_at_once, MnistLoader, download_mnist_data
-from src.training import train_rotate
+from src.training import train_rotate, train_autoencoder
 from utils import model_path_exists, load_berton_gan, save_checkpoint
 
 BATCH_SIZE = 32
@@ -15,7 +15,7 @@ ENCODER_AMOUNT = 3
 EPOCHS = 5
 LR = 1e-3
 MOMENTUM = 0
-DEFAULT_BASE_NAME = 'mnist_experiment_herb_7'
+DEFAULT_BASE_NAME = 'mnist_experiment_herb_8'
 
 class _Evaluator():
 	def __init__(self, verbose=False):
@@ -91,6 +91,14 @@ def train_mnist_gan(
 	if verbose:
 		print(f'training for {epochs} more epochs')
 	for epoch in range(start_epoch, start_epoch + epochs):
+		# metadata = train_autoencoder(
+		# 	berton_gan, 
+		# 	dataloader,
+		# 	epochs=1, 
+		# 	verbose=verbose,
+		# 	epochs_start=epoch,
+		# 	optimizer_options={'lr': LR, 'momentum': MOMENTUM}
+		# )
 		# train for an epoch
 		metadata = train_all_at_once(
 		# metadata = train_rotate(
