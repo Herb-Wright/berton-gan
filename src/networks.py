@@ -116,8 +116,12 @@ networks = {
 			Flatten(),
 			nn.Linear(64 * 4 * 4, 64 * 4 * 4),
 			nn.LeakyReLU(0.01),
-			nn.Linear(64 * 4 * 4, 1),
-			nn.Sigmoid(),
+			nn.Linear(64 * 4 * 4, 64 * 4 * 4),
+			nn.LeakyReLU(0.01),
+			nn.Linear(64 * 4 * 4, 10),
+			nn.LeakyReLU(0.01),
+			nn.Linear(10, 1),
+			# nn.Sigmoid(),
 		), # CNN: (28x28x1) --> 1
 		'discriminator2': ConcatHelper(nn.Sequential(
 			nn.Conv2d(3, 32, kernel_size=(5, 5)),

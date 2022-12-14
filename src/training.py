@@ -30,7 +30,7 @@ _square_losses = {
 			+ mse_loss(R_B_fake, torch.ones_like(R_B_fake)) 
 			+ mse_loss(C_A_fake, torch.ones_like(C_A_fake)) 
 			+ mse_loss(C_B_fake, torch.ones_like(C_B_fake)) 
-			+ D_A + D_B) / 6,
+			+ 0.5 * (D_A + D_B)) / 5,
 	'discriminator': lambda R_A, R_B, C_A, R_A_fake, R_B_fake, C_B:
 		(mse_loss(R_A, torch.ones_like(R_A)) 
 			+ mse_loss(R_B, torch.ones_like(R_B)) 
@@ -289,6 +289,39 @@ def train_rotate(
 				print(f'  Evaluation: {eval}')
 	return metadata
 
+
+def train_autoencoder(
+	berton_gan, 
+	dataloader, 
+	epochs,
+	optimizer=SGD, 
+	optimizer_options={}, 
+	verbose=False,
+	evaluator=None,
+	epochs_start=0
+):
+	optimizer_options = _get_optimizer_options(optimizer_options)
+	G_optim = optimizer(
+		list(berton_gan.image_encoder.parameters()) + list(berton_gan.image_decoder.parameters()),
+		**optimizer_options['image_decoder'],
+	)
+	metadata = {}
+	for epoch in range(epochs):
+		total_epoch_num = epoch + epochs_start
+		_, G_loss, _ = _train_one_epoch(
+			berton_gan, 
+			dataloader,
+			F_optim=None,
+			G_optim=G_optim,
+			D_optim=None,
+			epoch_num=(total_epoch_num),
+			verbose=verbose,
+			losses={'image_decoder': lambda _0, _1, _2, _3, D_A, D_B: (D_A + D_B) * 0.5}
+		)
+		metadata[epoch] = {'G_loss': G_loss}
+		if verbose: 
+			print(f'Epoch {total_epoch_num} loss: {G_loss}')
+	return metadata
 
 # Run tests
 if __name__ == '__main__':
