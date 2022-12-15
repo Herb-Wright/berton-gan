@@ -48,14 +48,14 @@ networks = {
 			nn.Linear(4*4*64,2)
 		)), # nn.Sequential or something: CNN: 28x28x1 --> 2
 		'image_encoder': ConcatHelper(nn.Sequential(
-		nn.Conv2d(1, 8, 3, 1, 1),
-		nn.LeakyReLU(0.01),
-		nn.MaxPool2d(2, 2),
-		nn.Conv2d(8, 16, 3, 1, 1),
-		nn.LeakyReLU(0.01),
-		nn.Conv2d(16, 32, 3, 1, 1),
-		nn.LeakyReLU(0.01),
-		nn.MaxPool2d(2,2)
+			nn.Conv2d(1, 8, 3, 1, 1),
+			nn.LeakyReLU(0.01),
+			nn.MaxPool2d(2, 2),
+			nn.Conv2d(8, 16, 3, 1, 1),
+			nn.LeakyReLU(0.01),
+			nn.Conv2d(16, 32, 3, 1, 1),
+			nn.LeakyReLU(0.01),
+			nn.MaxPool2d(2,2)
 	)), # FCNN: 28x28x1 --> some feature map (maybe 7x7x8)
 		'image_decoder': ConcatHelper(nn.Sequential(
 			nn.Conv2d(34, 128, kernel_size=3, padding='same'),
