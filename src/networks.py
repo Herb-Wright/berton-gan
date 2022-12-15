@@ -33,23 +33,9 @@ class Flatten(nn.Module):
 		else:
 			return x.view(-1)
 
-def _mnist_face_encoder():
-	'''
-	This is a face encoder network using nn.sequential
-
-	The layers are as follows:
-	1. Convolutional layer with 32 filters, 5x5 size, stride 1
-	2. Leaky ReLU
-	3. 2x2 Max pooling layer, stride 2
-	4. Convolutional layer with 64 filters, 5x5 size, stride 1
-	5. Leaky ReLu
-	6. 2x2 Max pooling layer, stride 2
-	7. Flattening the matrix before the fully connected layer
-	8. Fully connected layer with output size 4x4x64
-	9. Leaky ReLU
-	10. Fully connected layer with output size of 2
-	'''
-	return nn.Sequential(
+networks = {
+	'mnist': {
+		'face_encoder': ConcatHelper(nn.Sequential(
 			nn.Conv2d(1,32,5,1),
 			nn.LeakyReLU(0.01),
 			nn.MaxPool2d(2,2),
@@ -60,22 +46,8 @@ def _mnist_face_encoder():
 			nn.Linear(1024,4*4*64),
 			nn.LeakyReLU(0.01),
 			nn.Linear(4*4*64,2)
-		)
-
-def _mnist_image_encoder():
-	'''
-	1. Convolutional layer with 8 filters, 3x3 size, padding 1, stride 1
-	2. ReLU
-	3. 2x2 Max pooling layer stride 2
-	4. Convolutional layer with 16 filters 3x3 size, padding 1, stride 1
-	5. ReLU
-	6. Convolutional layer with 32 filters 3x3 size, padding 1, stride 1
-	7. ReLU
-	8. 2x2 Max pooling layer stride 2
-
-	Output is a 7x7x32 tensor
-	'''
-	return nn.Sequential(
+		)), # nn.Sequential or something: CNN: 28x28x1 --> 2
+		'image_encoder': ConcatHelper(nn.Sequential(
 		nn.Conv2d(1, 8, 3, 1, 1),
 		nn.LeakyReLU(0.01),
 		nn.MaxPool2d(2, 2),
@@ -84,13 +56,7 @@ def _mnist_image_encoder():
 		nn.Conv2d(16, 32, 3, 1, 1),
 		nn.LeakyReLU(0.01),
 		nn.MaxPool2d(2,2)
-	)
-
-
-networks = {
-	'mnist': {
-		'face_encoder': _mnist_face_encoder(), # nn.Sequential or something: CNN: 28x28x1 --> 2
-		'image_encoder': _mnist_image_encoder(), # FCNN: 28x28x1 --> some feature map (maybe 7x7x8)
+	)), # FCNN: 28x28x1 --> some feature map (maybe 7x7x8)
 		'image_decoder': ConcatHelper(nn.Sequential(
 			nn.Conv2d(34, 128, kernel_size=3, padding='same'),
 			nn.ReLU(),
