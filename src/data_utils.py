@@ -18,7 +18,18 @@ DATA_PATH = os.path.abspath(
 
 # FOR DOWNLOADING DATA
 
-def download_mnist_data(path=DATA_PATH, train=True):
+def download_mnist_data(path:str=DATA_PATH, train:str=True):
+	'''
+	downloads mnist data into the `path` directory.
+	Then returns the pytorch dataset
+
+	args:
+	- `path`: the path to download MNIST to
+	- `train`: whether or not to return the training data or test data
+
+	returns:
+	- the dataset
+	'''
 	mnist_train = dset.MNIST(path, train=train, download=True, transform=T.ToTensor())
 	return mnist_train
 
@@ -60,7 +71,6 @@ class MnistLoader:
 		returns:
 		- (MnistLoader): a loader that loads an epoch of MNIST
 		'''
-		self.data_length = 50000 if train else 10000
 		self.batch_size = batch_size
 		self.encoder_amount = encoder_amount
 		self.device = device
@@ -68,6 +78,7 @@ class MnistLoader:
 			[T.ToTensor(), transform] if transform else [T.ToTensor()]
 		)
 		self.data_set = dset.MNIST(path, train=train)
+		self.data_length = len(self.data_set)
 
 	def __iter__(self):
 		'''starts MnistLoader iterator'''
