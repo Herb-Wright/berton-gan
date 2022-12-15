@@ -1,0 +1,13 @@
+first 5: (0-4)
+- train only G Loss as autoencoder
+- lr: 1e-1
+- 32 batch size
+- 0.5 momentum
+next 25: (5-29)
+- train all
+next 10: (30-39)
+- decrease lr to 1e-3
+- momentum: 0.9
+next 10: (40-49)
+- lr: same
+- momentum: 0
