@@ -15,7 +15,7 @@ ENCODER_AMOUNT = 3
 EPOCHS = 5
 LR = 1e-3
 MOMENTUM = 0
-DEFAULT_BASE_NAME = 'mnist_experiment_herb_8'
+DEFAULT_BASE_NAME = 'mnist_experiment_0'
 
 class _Evaluator():
 	def __init__(self, verbose=False):
