@@ -10,9 +10,12 @@ def _get_optimizer_options(optimizer_options):
 	if a learning rate is not specified, it is set to `1e-4`,
 	then updated `optimizer_options` dict is returned
 	'''
+	lr = 5e-3
+	if 'lr' in optimizer_options.keys():
+		lr = optimizer_options['lr']
 	for optim_name in ['face_encoder', 'image_decoder', 'discriminator']:
 		if optim_name not in optimizer_options.keys():
-			optimizer_options[optim_name] = {'lr': 5e-3}
+			optimizer_options[optim_name] = {'lr': lr}
 	return optimizer_options
 
 
@@ -113,7 +116,8 @@ def _train_one_epoch(
 			F_loss = losses['face_encoder'](C_A, C_A_fake, C_B)
 			F_loss.backward()
 			F_optim.step()
-			F_loss_total += F_loss
+			F_loss_total += F_loss.detach()
+			F_optim.zero_grad()
 		h_F = h_F.detach()
 		# backprop on the image encoder and decoder
 		if G_optim:
@@ -125,7 +129,8 @@ def _train_one_epoch(
 			G_loss
 			G_loss.backward()
 			G_optim.step()
-			G_loss_total += G_loss
+			G_loss_total += G_loss.detach()
+			G_optim.zero_grad()
 		# backprop on the discriminators
 		if D_optim:
 			D_optim.zero_grad()
@@ -140,7 +145,8 @@ def _train_one_epoch(
 			D_loss = losses['discriminator'](R_A, R_B, C_A, R_A_fake, R_B_fake, C_B)
 			D_loss.backward()
 			D_optim.step()
-			D_loss_total += D_loss
+			D_loss_total += D_loss.detach()
+			D_optim.zero_grad()
 	# return all our losses
 	return F_loss_total, G_loss_total, D_loss_total	
 
