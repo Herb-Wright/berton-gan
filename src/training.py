@@ -14,6 +14,7 @@ def _get_optimizer_options(optimizer_options):
 	momentum = 0
 	if 'lr' in optimizer_options.keys():
 		lr = optimizer_options['lr']
+	if 'momentum' in optimizer_options.keys():
 		momentum = optimizer_options['momentum']
 	for optim_name in ['face_encoder', 'image_decoder', 'discriminator']:
 		if optim_name not in optimizer_options.keys():
@@ -167,7 +168,7 @@ def train_all_at_once(
 	epochs_start=0
 ):
 	'''
-	trains the gan by training each network simultaneously (possibly less stable)
+	trains the gan by training each network simultaneously
 
 	inputs:
 	- berton_gan: a BertonGan instance
@@ -239,8 +240,7 @@ def train_rotate(
 	epochs_start=0
 ):
 	'''
-	NOTE: NOT IMPLEMENTED YET
-	trains the gan one network at a time (maybe more stable)
+	This trains by rotating what is being trained and is kind of trash
 
 	returns:
 
