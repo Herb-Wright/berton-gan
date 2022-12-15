@@ -10,12 +10,14 @@ def _get_optimizer_options(optimizer_options):
 	if a learning rate is not specified, it is set to `1e-4`,
 	then updated `optimizer_options` dict is returned
 	'''
-	lr = 5e-3
+	lr = 5e-2
+	momentum = 0
 	if 'lr' in optimizer_options.keys():
 		lr = optimizer_options['lr']
+		momentum = optimizer_options['momentum']
 	for optim_name in ['face_encoder', 'image_decoder', 'discriminator']:
 		if optim_name not in optimizer_options.keys():
-			optimizer_options[optim_name] = {'lr': lr}
+			optimizer_options[optim_name] = {'lr': lr, 'momentum': momentum}
 	return optimizer_options
 
 
@@ -104,7 +106,7 @@ def _train_one_epoch(
 		total=len(dataloader), 
 		disable=(not verbose),
 		desc=f'epoch {epoch_num}',
-		ncols=100,
+		ncols=125,
 	):
 		f_A, I_A, I_B = data
 		h_F = gan.face_encoder(f_A)
@@ -148,6 +150,9 @@ def _train_one_epoch(
 			D_loss_total += D_loss.detach()
 			D_optim.zero_grad()
 	# return all our losses
+	F_loss_total /= len(dataloader)
+	G_loss_total /= len(dataloader)
+	D_loss_total /= len(dataloader)
 	return F_loss_total, G_loss_total, D_loss_total	
 
 
@@ -223,13 +228,15 @@ def train_all_at_once(
 
 
 def train_rotate(
-	network, 
+	berton_gan, 
 	dataloader, 
 	epoch_per=2,
 	epochs=40,
 	optimizer=SGD, 
 	optimizer_options={}, 
-	verbose=False
+	verbose=False,
+	evaluator=None,
+	epochs_start=0
 ):
 	'''
 	NOTE: NOT IMPLEMENTED YET
@@ -239,7 +246,48 @@ def train_rotate(
 
 		- data on training
 	'''
-	raise NotImplementedError
+	optimizer_options = _get_optimizer_options(optimizer_options)
+	F_optim = optimizer(berton_gan.face_encoder.parameters(), **optimizer_options['face_encoder'])
+	G_optim = optimizer(
+		list(berton_gan.image_encoder.parameters()) + list(berton_gan.image_decoder.parameters()),
+		**optimizer_options['image_decoder'],
+	)
+	D_optim = optimizer(
+		list(berton_gan.discriminator1.parameters()) + list(berton_gan.discriminator2.parameters()),
+		**optimizer_options['discriminator'],
+	)
+	metadata = {}
+	for epoch in range(epochs):
+		total_epoch_num = epoch + epochs_start
+		cycle_loc = (total_epoch_num % (3 * epoch_per)) // epoch_per
+		# if verbose:
+			# print(f'epoch {epoch + epochs_start}')
+		# do the epoch
+		F_loss, G_loss, D_loss = _train_one_epoch(
+			berton_gan, 
+			dataloader,
+			F_optim=F_optim if cycle_loc == 1 else None,
+			G_optim=G_optim if cycle_loc > 0 else None,
+			D_optim=D_optim if cycle_loc == 0 else None,
+			epoch_num=(total_epoch_num),
+			verbose=verbose
+		)
+		# log data
+		metadata[epoch]  = {
+			'F_loss': F_loss,
+			'G_loss': G_loss,
+			'D_loss': D_loss,
+		}
+		if evaluator:
+			with torch.no_grad():
+				eval = evaluator(berton_gan)
+			metadata[epoch]['eval'] = eval
+		# print stuff
+		if verbose:
+			print(f'  F_loss: {F_loss}; G_loss: {G_loss}; D_loss: {D_loss};')
+			if evaluator:
+				print(f'  Evaluation: {eval}')
+	return metadata
 
 
 # Run tests

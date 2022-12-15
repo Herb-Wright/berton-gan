@@ -7,13 +7,15 @@ import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src import BertonGan, train_all_at_once, MnistLoader, download_mnist_data
+from src.training import train_rotate
 from utils import model_path_exists, load_berton_gan, save_checkpoint
 
-BATCH_SIZE = 16
+BATCH_SIZE = 32
 ENCODER_AMOUNT = 3
 EPOCHS = 5
-LR = 5e-3
-DEFAULT_BASE_NAME = 'mnist_experiment_herb_2'
+LR = 1e-3
+MOMENTUM = 0
+DEFAULT_BASE_NAME = 'mnist_experiment_herb_7'
 
 class _Evaluator():
 	def __init__(self, verbose=False):
@@ -31,12 +33,12 @@ class _Evaluator():
 			# build latent vectors
 			latent_vectors = torch.zeros((10, 2))
 			train_length = len(self.train_dataset)
-			for i in trange(train_length, desc='building latent vectors for eval', ncols=90):
+			for i in trange(train_length, desc='building latent vectors for eval', ncols=100):
 				x_i, y_i = self.train_dataset[i]
 				latent_vectors[y_i] += gan.face_encoder(x_i)
 			latent_vectors = (latent_vectors * 10) / train_length
 			# evaluate
-			for i in trange(len(self.test_dataset), desc='evaluating on test set', ncols=90):
+			for i in trange(len(self.test_dataset), desc='evaluating on test set', ncols=100):
 				x_i, y_i = self.test_dataset[i]
 				scores = torch.zeros(10)
 				for i in range(10):
@@ -91,13 +93,15 @@ def train_mnist_gan(
 	for epoch in range(start_epoch, start_epoch + epochs):
 		# train for an epoch
 		metadata = train_all_at_once(
+		# metadata = train_rotate(
 			berton_gan, 
 			dataloader,
-			1, 
+			# epoch_per=400,
+			epochs=1, 
 			evaluator=evaluator.evaluate,
 			verbose=verbose,
 			epochs_start=epoch,
-			optimizer_options={'lr': 5e-3}
+			optimizer_options={'lr': LR, 'momentum': MOMENTUM}
 		)
 		# save our epoch data
 		if save:

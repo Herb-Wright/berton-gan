@@ -92,14 +92,16 @@ networks = {
 		'face_encoder': _mnist_face_encoder(), # nn.Sequential or something: CNN: 28x28x1 --> 2
 		'image_encoder': _mnist_image_encoder(), # FCNN: 28x28x1 --> some feature map (maybe 7x7x8)
 		'image_decoder': ConcatHelper(nn.Sequential(
-			nn.Conv2d(34, 64, kernel_size=3, padding='same'),
-			nn.LeakyReLU(0.01),
-			nn.Conv2d(64, 32, kernel_size=3, padding='same'),
-			nn.LeakyReLU(0.01),
+			nn.Conv2d(34, 128, kernel_size=3, padding='same'),
+			nn.ReLU(),
+			nn.Conv2d(128, 128, kernel_size=3, padding='same'),
+			nn.ReLU(),
+			nn.Conv2d(128, 32, kernel_size=3, padding='same'),
+			nn.ReLU(),
 			nn.ConvTranspose2d(32, 16, (4, 4), 2, padding=1),
-			nn.LeakyReLU(0.01),
+			nn.ReLU(),
 			nn.Conv2d(16, 16, kernel_size=3, padding='same'),
-			nn.LeakyReLU(0.01),
+			nn.ReLU(),
 			nn.ConvTranspose2d(16, 1, (4, 4), 2, padding=1),
 			# nn.Tanh(),
 			nn.Sigmoid(),
@@ -143,12 +145,21 @@ networks = {
 class BertonGan():
 	def __init__(self, type:str='mnist', device=DEVICE):
 		self.type = type
-		self.face_encoder:nn.Module = networks[type]['face_encoder'].to(device)
-		self.image_encoder:nn.Module = networks[type]['image_encoder'].to(device)
-		self.image_decoder:nn.Module = networks[type]['image_decoder'].to(device)
-		self.discriminator1:nn.Module = networks[type]['discriminator1'].to(device)
-		self.discriminator2:nn.Module = networks[type]['discriminator2'].to(device)
-		
+		self.face_encoder:nn.Module = networks[type]['face_encoder']
+		self.image_encoder:nn.Module = networks[type]['image_encoder']
+		self.image_decoder:nn.Module = networks[type]['image_decoder']
+		self.discriminator1:nn.Module = networks[type]['discriminator1']
+		self.discriminator2:nn.Module = networks[type]['discriminator2']
+		if type != 'empty':
+			self.to(device)
+	
+	def to(self, device):
+		self.face_encoder.to(device)
+		self.image_encoder.to(device)
+		self.image_decoder.to(device)
+		self.discriminator1.to(device)
+		self.discriminator2.to(device)
+
 	def eval(self):
 		self.face_encoder.eval()
 		self.image_encoder.eval()
