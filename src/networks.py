@@ -205,6 +205,15 @@ class BertonGan():
 		return I_fake
 		
 
+	def generate_image_latent(self, I, h_A):
+		# self.image_encoder.eval()
+		# self.image_decoder.eval()
+		with torch.no_grad():
+			h_I = self.image_encoder(I)
+			I_fake = self.image_decoder(h_I, h_A)
+		return I_fake
+		
+
 	def face_encoder():
 		'''
 		This is a face encoder network using nn.sequential
