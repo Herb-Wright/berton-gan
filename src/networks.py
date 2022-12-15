@@ -23,6 +23,36 @@ class ConcatHelper(nn.Module):
 			out = self.network(out)
 			return out
 
+class celeb_block(nn.Module):
+	def __init__(self, Cin, Cout):
+		super().__init__()
+
+		self.net = nn.Sequential(
+			nn.Conv2d(Cin, Cin/4, 1, 1),
+			nn.LeakyReLU(0.01),
+			nn.Conv2d(Cin/4, Cin/2, 3, 1, 1),
+			nn.LeakyReLU(0.01),
+			nn.Conv2d(Cin/2, Cin/2, 5, 1, 2),
+			nn.LeakyReLU(0.01), 
+			nn.Conv2d(Cin/2, Cout, 1, 1)
+		)
+
+class initial_celeb(nn.Module):
+	def __init__(self, Cout):
+		super().__init__()
+		self.net = nn.Sequential(
+			nn.Conv2d(1, Cout, 1, 1)
+		)
+
+class last_celeb(nn.Module):
+	def __init__(self, Cin):
+		super().__init__()
+		self.net = nn.Sequential(
+			Flatten(),
+			nn.Linear(1024, 4*4*64),
+			nn.LeakyReLU(0.01),
+			nn.Linear(4*4*64, 2)
+		)
 
 class Flatten(nn.Module):
 	'''nn.Module that flattens the input'''
@@ -103,8 +133,15 @@ networks = {
 			nn.Sigmoid(),
 		)), # CNN: (28x28x1) x 2	--> 1
 	},
-	'empty': {
-		'face_encoder': None,
+	'celeba': {
+		'face_encoder': nn.Sequential(
+			initial_celeb(4), 
+			celeb_block(4, 8),
+			celeb_block(8, 16),
+			celeb_block(16, 32),
+			celeb_block(32, 64),
+			last_celeb(64)
+			),
 		'image_encoder': None,
 		'image_decoder': None,
 		'discriminator1': None,
@@ -181,7 +218,6 @@ class BertonGan():
 			I_fake = self.image_decoder(h_I, h_A)
 		return I_fake
 
-	
 
 
 class Unflatten(nn.Module):
