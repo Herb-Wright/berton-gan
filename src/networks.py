@@ -28,13 +28,13 @@ class CelebBlock(nn.Module):
 		super().__init__()
 
 		self.net = nn.Sequential(
-			nn.Conv2d(Cin, Cin/4, 1, 1),
+			nn.Conv2d(Cin, int(Cin/4), 1, 1),
 			nn.LeakyReLU(0.01),
-			nn.Conv2d(Cin/4, Cin/2, 3, 1, 1),
+			nn.Conv2d(int(Cin/4), int(Cin/2), 3, 1, 1),
 			nn.LeakyReLU(0.01),
-			nn.Conv2d(Cin/2, Cin/2, 5, 1, 2),
+			nn.Conv2d(int(Cin/2), int(Cin/2), 5, 1, 2),
 			nn.LeakyReLU(0.01), 
-			nn.Conv2d(Cin/2, Cout, 1, 1)
+			nn.Conv2d(int(Cin/2), Cout, 1, 1)
 		)
 
 class InitialCelebBlock(nn.Module):
@@ -63,9 +63,11 @@ class Flatten(nn.Module):
 		else:
 			return x.view(-1)
 
+
+
 networks = {
 	'mnist': {
-		'face_encoder': ConcatHelper(nn.Sequential(
+		'face_encoder': nn.Sequential(
 			nn.Conv2d(1,32,5,1),
 			nn.LeakyReLU(0.01),
 			nn.MaxPool2d(2,2),
@@ -76,8 +78,8 @@ networks = {
 			nn.Linear(1024,4*4*64),
 			nn.LeakyReLU(0.01),
 			nn.Linear(4*4*64,2)
-		)), # nn.Sequential or something: CNN: 28x28x1 --> 2
-		'image_encoder': ConcatHelper(nn.Sequential(
+		), # nn.Sequential or something: CNN: 28x28x1 --> 2
+		'image_encoder': nn.Sequential(
 			nn.Conv2d(1, 8, 3, 1, 1),
 			nn.LeakyReLU(0.01),
 			nn.MaxPool2d(2, 2),
@@ -86,7 +88,7 @@ networks = {
 			nn.Conv2d(16, 32, 3, 1, 1),
 			nn.LeakyReLU(0.01),
 			nn.MaxPool2d(2,2)
-	)), # FCNN: 28x28x1 --> some feature map (maybe 7x7x8)
+	), # FCNN: 28x28x1 --> some feature map (maybe 7x7x8)
 		'image_decoder': ConcatHelper(nn.Sequential(
 			nn.Conv2d(34, 128, kernel_size=3, padding='same'),
 			nn.ReLU(),
