@@ -23,7 +23,7 @@ class ConcatHelper(nn.Module):
 			out = self.network(out)
 			return out
 
-class celeb_block(nn.Module):
+class CelebBlock(nn.Module):
 	def __init__(self, Cin, Cout):
 		super().__init__()
 
@@ -37,14 +37,14 @@ class celeb_block(nn.Module):
 			nn.Conv2d(Cin/2, Cout, 1, 1)
 		)
 
-class initial_celeb(nn.Module):
+class InitialCelebBlock(nn.Module):
 	def __init__(self, Cout):
 		super().__init__()
 		self.net = nn.Sequential(
 			nn.Conv2d(1, Cout, 1, 1)
 		)
 
-class last_celeb(nn.Module):
+class LastCelebBlock(nn.Module):
 	def __init__(self, Cin):
 		super().__init__()
 		self.net = nn.Sequential(
@@ -137,13 +137,20 @@ networks = {
 	},
 	'celeba': {
 		'face_encoder': nn.Sequential(
-			initial_celeb(4), 
-			celeb_block(4, 8),
-			celeb_block(8, 16),
-			celeb_block(16, 32),
-			celeb_block(32, 64),
-			last_celeb(64)
+			InitialCelebBlock(4), 
+			CelebBlock(4, 8),
+			CelebBlock(8, 16),
+			CelebBlock(16, 32),
+			CelebBlock(32, 64),
+			LastCelebBlock(64)
 			),
+		'image_encoder': None,
+		'image_decoder': None,
+		'discriminator1': None,
+		'discriminator2': None,
+	},
+	'empty': {
+		'face_encoder': None,
 		'image_encoder': None,
 		'image_decoder': None,
 		'discriminator1': None,
