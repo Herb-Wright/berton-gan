@@ -44,6 +44,8 @@ def download_mnist_data(path:str=DATA_PATH, train:str=True):
 	return mnist_train
 
 def download_celeba(path=DATA_PATH, train=True):
+	if not os.path.exists(dataset_folder):
+		os.mkdir(dataset_folder)
 	dataset_folder = os.path.join(path, 'celeba')
 	if not os.path.exists(dataset_folder + '.zip'):
 		print('Downloading zip file from google drive...')
