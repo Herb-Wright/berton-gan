@@ -52,7 +52,7 @@ class DownsampleBertonBlock(nn.Module):
 	
 	def forward(self, x):
 		out = self.conv(x)
-		out = self.relu(x)
+		out = self.relu(out)
 		return out
 
 class UpsampleBertonBlock(nn.Module):
@@ -63,7 +63,7 @@ class UpsampleBertonBlock(nn.Module):
 
 	def forward(self, x):
 		out = self.conv_t(x)
-		out = self.relu(x)
+		out = self.relu(out)
 		return out
 
 
