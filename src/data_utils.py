@@ -44,8 +44,8 @@ def download_mnist_data(path:str=DATA_PATH, train:str=True):
 	return mnist_train
 
 def download_celeba(path=DATA_PATH, train=True):
-	if not os.path.exists(dataset_folder):
-		os.makedirs(dataset_folder)
+	if not os.path.exists(path):
+		os.makedirs(path)
 	dataset_folder = os.path.join(path, 'celeba')
 	if not os.path.exists(dataset_folder + '.zip'):
 		print('Downloading zip file from google drive...')
@@ -84,7 +84,7 @@ def _download_file_from_google_drive(id, destination):
 def _save_response_content(response, destination):
 	CHUNK_SIZE = 32768
 
-	with open(destination, "wb") as f:
+	with open(destination, "wb+") as f:
 		for chunk in response.iter_content(CHUNK_SIZE):
 			if chunk: # filter out keep-alive new chunks
 				f.write(chunk)
