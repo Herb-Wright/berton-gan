@@ -55,9 +55,7 @@ class LastCelebBlock(nn.Module):
 		super().__init__()
 		self.net = nn.Sequential(
 			Flatten(),
-			nn.Linear(1024, 4*4*64),
-			nn.LeakyReLU(0.01),
-			nn.Linear(4*4*64, 2)
+			nn.Linear(2483456, 2),
 		)
 	
 	def forward(self, x):
