@@ -46,6 +46,7 @@ class ConcatHelper(nn.Module):
 
 class DownsampleBertonBlock(nn.Module):
 	def __init__(self, in_channels, out_channels):
+		super().__init__()
 		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1)
 		self.relu = nn.LeakyReLU(0.01, inplace=True)
 	
@@ -56,6 +57,7 @@ class DownsampleBertonBlock(nn.Module):
 
 class UpsampleBertonBlock(nn.Module):
 	def __init__(self, in_channels, out_channels):
+		super().__init__()
 		self.conv_t = nn.ConvTranspose2d(in_channels, out_channels, (4, 4), 2, padding=1)
 		self.relu = nn.ReLU(inplace=True)
 
@@ -67,6 +69,7 @@ class UpsampleBertonBlock(nn.Module):
 
 class ResidualBertonBlock(nn.Module):
 	def __init__(self, channels, leaky=True, norm=False):
+		super().__init__()
 		self.has_norm = norm
 		self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
 		self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
