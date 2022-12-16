@@ -63,6 +63,8 @@ class Flatten(nn.Module):
 		else:
 			return x.view(-1)
 
+
+
 networks = {
 	'mnist': {
 		'face_encoder': ConcatHelper(nn.Sequential(
