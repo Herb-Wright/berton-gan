@@ -8,7 +8,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from src import BertonGan, train_all_at_once, MnistLoader, download_mnist_data
 from src.training import train_rotate, train_autoencoder
-from utils import model_path_exists, load_berton_gan, save_checkpoint
+from utils import model_path_exists, load_berton_gan, save_checkpoint, load_last_model
 
 BATCH_SIZE = 32
 ENCODER_AMOUNT = 3
@@ -58,23 +58,6 @@ class _Evaluator():
 			print(f'got score {correct} / {total}')
 		return correct / total
 
-
-def _load_last_model(base_name, verbose):
-	start_epoch = 0
-	# decide whether to load a BertonGan or create one
-	if(not model_path_exists(base_name + '/0')):
-		print('no model exists, creating one')
-		berton_gan = BertonGan('mnist')
-	else:
-		while model_path_exists(base_name + f'/{start_epoch + 1}'):
-			start_epoch += 1
-		if verbose:
-			print(f'loading model from epoch {start_epoch}')
-		berton_gan = load_berton_gan(base_name + f'/{start_epoch}')
-		berton_gan.train()
-		start_epoch += 1
-	return berton_gan, start_epoch
-
 def train_mnist_gan(
 	base_name:str=DEFAULT_BASE_NAME,
 	epochs:int=EPOCHS,
@@ -95,7 +78,7 @@ def train_mnist_gan(
 
 	this function returns nothing.
 	'''
-	berton_gan, start_epoch = _load_last_model(base_name, verbose)
+	berton_gan, start_epoch = load_last_model('mnist', base_name, verbose)
 	# make our objects and loop for each epoch
 	evaluator = _Evaluator(verbose=verbose)
 	dataloader = MnistLoader(ENCODER_AMOUNT, BATCH_SIZE)
@@ -133,7 +116,7 @@ def train_mnist_autoencoder(
 	lr:float=LR,
 ):
 	'''trains the image encoder and image decoder as an autoencoder'''
-	berton_gan, start_epoch = _load_last_model(base_name, verbose)
+	berton_gan, start_epoch = load_last_model(base_name, verbose)
 	# make our objects and loop for each epoch
 	evaluator = _Evaluator(verbose=verbose)
 	dataloader = MnistLoader(ENCODER_AMOUNT, BATCH_SIZE)

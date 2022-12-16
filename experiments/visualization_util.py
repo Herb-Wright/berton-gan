@@ -2,6 +2,7 @@
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
 import math
+from torchvision.transforms import ToPILImage
 
 def show_images(images, grayscale=False):
 	sqrtn = int(math.ceil(math.sqrt(len(images))))
@@ -19,5 +20,5 @@ def show_images(images, grayscale=False):
 		if grayscale:
 			plt.imshow(img.squeeze(), cmap='gray')
 		else:
-			plt.imshow(img.squeeze()) 
+			plt.imshow(ToPILImage()(img.squeeze())) 
 

@@ -101,6 +101,7 @@ def _train_one_epoch(
 	function that trains a network for one epoch.
 	If F_optim, G_optim, or D_optim are `None`, then that network is skipped for backprop.
 	'''
+	gan.train()
 	F_loss_total, G_loss_total, D_loss_total = 0, 0, 0
 	for i, data in tqdm(
 		enumerate(dataloader), 
@@ -165,7 +166,8 @@ def train_all_at_once(
 	optimizer_options={},
 	verbose=False,
 	evaluator=None,
-	epochs_start=0
+	epochs_start:int=0,
+	save_func:callable=None
 ):
 	'''
 	trains the gan by training each network simultaneously
@@ -225,6 +227,9 @@ def train_all_at_once(
 			print(f'  F_loss: {F_loss}; G_loss: {G_loss}; D_loss: {D_loss};')
 			if evaluator:
 				print(f'  Evaluation: {eval}')
+		if save_func:
+			save_func(berton_gan, metadata, epoch)
+
 	return metadata
 
 
