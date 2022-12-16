@@ -75,8 +75,8 @@ class ResidualBertonBlock(nn.Module):
 		self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
 		self.relu = nn.LeakyReLU(0.01, inplace=True) if leaky else nn.ReLU(inplace=True)
 		if norm:
-			self.norm1 = nn.InstanceNorm2d(momentum=1)
-			self.norm2 = nn.InstanceNorm2d(momentum=1)
+			self.norm1 = nn.InstanceNorm2d(channels, momentum=1)
+			self.norm2 = nn.InstanceNorm2d(channels, momentum=1)
 
 	def forward(self, x):
 		identity = x
