@@ -148,7 +148,7 @@ _celeba_discriminator1:nn.Module = nn.Sequential(
 	DownsampleBertonBlock(128, 256), # (128 x 2 x 2)
 	nn.MaxPool2d(kernel_size=2), # (128,)
 	Flatten(),
-	nn.Linear(128, 64),
+	nn.Linear(256, 64),
 	nn.LeakyReLU(0.01),
 	nn.Linear(64, 16),
 	nn.LeakyReLU(0.01),
