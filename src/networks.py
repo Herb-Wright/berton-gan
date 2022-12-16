@@ -4,24 +4,177 @@ this file defines our main networks
 
 import torch
 import torch.nn as nn
+from torchvision.models.resnet import BasicBlock
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
+NORM = False
+
+
+class Flatten(nn.Module):
+	'''nn.Module that flattens the input'''
+	def forward(self, x:torch.Tensor):
+		if len(x.shape) > 3:
+			N, C, H, W = x.size()
+			return x.view(N, -1)
+		else:
+			return x.view(-1)
 
 class ConcatHelper(nn.Module):
-		def __init__(self, network):
-			super().__init__()
-			self.network = network
+	'''this class concatenates two inputs, so it can be fed into an nn.Sequential'''
+	def __init__(self, network:nn.Module, prenetwork:nn.Module = None):
+		'''
+		args:
+		- `network`: a network where the concatenated input will be passed into
+		'''
+		super().__init__()
+		self.network = network
+		self.prenetwork = prenetwork
 
-		def forward(self, x:torch.Tensor, y:torch.Tensor):
-			y_ndim = y.ndim
-			if x.shape[0] != y.shape[0] and y_ndim > 1:
-				y = torch.mean(y.clone(), dim=0, keepdim=True)
-				y = y.repeat(x.clone().shape[0], 1)
-			y = y.unsqueeze(-1).unsqueeze(-1).expand(y.shape + x.shape[-2:])
-			out = torch.cat((x, y), dim=(y_ndim - 1))
-			out = self.network(out)
-			return out
+	def forward(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
+		y_ndim = y.ndim
+		
+		if self.prenetwork:
+			x = self.prenetwork(x)
+		if x.shape[0] != y.shape[0] and y_ndim > 1:
+			y = torch.mean(y.clone(), dim=0, keepdim=True)
+			y = y.repeat(x.clone().shape[0], 1)
+		y = y.unsqueeze(-1).unsqueeze(-1).expand(y.shape + x.shape[-2:])
+		out = torch.cat((x, y), dim=(y_ndim - 1))
+		out = self.network(out)
+		return out
+
+class DownsampleBertonBlock(nn.Module):
+	def __init__(self, in_channels, out_channels):
+		self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=3, stride=2, padding=1)
+		self.relu = nn.LeakyReLU(0.01, inplace=True)
+	
+	def forward(self, x):
+		out = self.conv(x)
+		out = self.relu(x)
+		return out
+
+class UpsampleBertonBlock(nn.Module):
+	def __init__(self, in_channels, out_channels):
+		self.conv_t = nn.ConvTranspose2d(in_channels, out_channels, (4, 4), 2, padding=1)
+		self.relu = nn.ReLU(inplace=True)
+
+	def forward(self, x):
+		out = self.conv_t(x)
+		out = self.relu(x)
+		return out
+
+
+class ResidualBertonBlock(nn.Module):
+	def __init__(self, channels, leaky=True, norm=False):
+		self.has_norm = norm
+		self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
+		self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
+		self.relu = nn.LeakyReLU(0.01, inplace=True) if leaky else nn.ReLU(inplace=True)
+		if norm:
+			self.norm1 = nn.InstanceNorm2d(momentum=1)
+			self.norm2 = nn.InstanceNorm2d(momentum=1)
+
+	def forward(self, x):
+		identity = x
+		out = self.conv1(x)
+		if self.has_norm:
+			out = self.norm1(out)
+		out = self.relu(out)
+		out = self.conv2(out)
+		if self.has_norm:
+			out = self.norm2(out)
+		out = out + identity
+		out = self.relu(out)
+		return out
+
+# input: n x 3 x 128 x 128
+# output: n x 32
+_celeba_face_encoder:nn.Module = nn.Sequential(
+	nn.InstanceNorm2d(3, momentum=1, affine=True),
+	DownsampleBertonBlock(3, 32),
+	DownsampleBertonBlock(32, 64), # (64 x 32 x 32)
+	ResidualBertonBlock(64),
+	DownsampleBertonBlock(64, 64), # (64 x 16 x 16)
+	DownsampleBertonBlock(64, 128), # (128 x 8 x 8)
+	DownsampleBertonBlock(128, 128),
+	DownsampleBertonBlock(128, 256), # (128 x 2 x 2)
+	nn.MaxPool2d(kernel_size=2), # (128,)
+	nn.Linear(128, 64),
+	nn.LeakyReLU(0.01),
+	nn.Linear(64, 32),
+)
+
+# input: N x 3 x 128 x 128
+# output: N x 32 x 8 x 8
+_celeba_image_encoder:nn.Module = nn.Sequential(
+	nn.InstanceNorm2d(3, momentum=1, affine=True),
+	DownsampleBertonBlock(3, 32),
+	DownsampleBertonBlock(32, 64), # (64 x 32 x 32)
+	ResidualBertonBlock(64),
+	DownsampleBertonBlock(64, 64), # (64 x 16 x 16)
+	DownsampleBertonBlock(64, 128), # (128 x 8 x 8)
+	ResidualBertonBlock(128),
+	nn.Conv2d(128, 32, kernel_size=1),
+)
+
+# input: N x 64 x 8 x 8
+# output: N x 3 x 128 x 128
+_celeba_image_decoder:nn.Module = ConcatHelper(nn.Sequential(
+	UpsampleBertonBlock(64, 64),
+	ResidualBertonBlock(64, leaky=False),
+	UpsampleBertonBlock(64, 32), # (32 x 32 x 32)
+	UpsampleBertonBlock(32, 32), # (32 x 64 x 64)
+	ResidualBertonBlock(32, leaky=False),
+	UpsampleBertonBlock(32, 16), # (16 x 128 x 128)
+	nn.Conv2d(16, 3, kernel_size=1),
+	nn.Sigmoid()
+))
+
+# input: N x 3 x 128 x 128
+# output: N x 1
+_celeba_discriminator1:nn.Module = nn.Sequential(
+	nn.InstanceNorm2d(3, momentum=1, affine=True),
+	DownsampleBertonBlock(3, 32),
+	DownsampleBertonBlock(32, 64), # (64 x 32 x 32)
+	ResidualBertonBlock(64),
+	DownsampleBertonBlock(64, 64), # (64 x 16 x 16)
+	DownsampleBertonBlock(64, 128), # (128 x 8 x 8)
+	DownsampleBertonBlock(128, 128),
+	DownsampleBertonBlock(128, 256), # (128 x 2 x 2)
+	nn.MaxPool2d(kernel_size=2), # (128,)
+	nn.Linear(128, 64),
+	nn.LeakyReLU(0.01),
+	nn.Linear(64, 16),
+	nn.LeakyReLU(0.01),
+	nn.Linear(16, 1)
+)
+
+# input: x: (N x 3 x 128 x 128) y: (n x 16)
+# output: N x 1
+_celeba_discriminator2:nn.Module = ConcatHelper(
+	prenetwork=nn.Sequential(
+		nn.InstanceNorm2d(3, momentum=1, affine=True),
+		DownsampleBertonBlock(3, 32),
+		DownsampleBertonBlock(32, 64),
+		DownsampleBertonBlock(64, 32),
+		nn.LeakyReLU(0.01)  # now we have 32 x 16 x 16
+	),
+	network=nn.Sequential(
+		DownsampleBertonBlock(64), # (64 x 16 x 16)
+		DownsampleBertonBlock(64, 128), # (64 x 8 x 8),
+		DownsampleBertonBlock(128, 128), # (128 x 4 x 4)
+		DownsampleBertonBlock(128, 256), # (128 x 2 x 2)
+		nn.MaxPool2d(kernel_size=2),
+		Flatten(),
+		nn.Linear(256, 128),
+		nn.LeakyReLU(),
+		nn.Linear(128, 16),
+		nn.LeakyReLU(),
+		nn.Linear(16, 1)
+	)
+)
+
 
 class CelebBlock(nn.Module):
 	def __init__(self, Cin, Cout):
@@ -54,14 +207,6 @@ class LastCelebBlock(nn.Module):
 			nn.Linear(4*4*64, 2)
 		)
 
-class Flatten(nn.Module):
-	'''nn.Module that flattens the input'''
-	def forward(self, x:torch.Tensor):
-		if len(x.shape) > 3:
-			N, C, H, W = x.size()
-			return x.view(N, -1)
-		else:
-			return x.view(-1)
 
 
 
@@ -136,18 +281,11 @@ networks = {
 		)), # CNN: (28x28x1) x 2	--> 1
 	},
 	'celeba': {
-		'face_encoder': nn.Sequential(
-			InitialCelebBlock(4), 
-			CelebBlock(4, 8),
-			CelebBlock(8, 16),
-			CelebBlock(16, 32),
-			CelebBlock(32, 64),
-			LastCelebBlock(64)
-			),
-		'image_encoder': None,
-		'image_decoder': None,
-		'discriminator1': None,
-		'discriminator2': None,
+		'face_encoder': _celeba_face_encoder,
+		'image_encoder': _celeba_image_encoder,
+		'image_decoder': _celeba_image_decoder,
+		'discriminator1': _celeba_discriminator1,
+		'discriminator2': _celeba_discriminator2,
 	},
 	'empty': {
 		'face_encoder': None,

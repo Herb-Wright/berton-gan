@@ -398,9 +398,11 @@ class CelebALoader:
 		transform=None, 
 		path=DATA_PATH, 
 		train=True, 
-		device=DEVICE
+		device=DEVICE,
+		scale=True,
 	):
-		self.dataset = CelebA(path, 'train' if train else 'test', transform=T.ToTensor(),)
+		dataset_transform = T.Compose([T.Resize((128, 128)), T.ToTensor()]) if scale else T.ToTensor()
+		self.dataset = CelebA(path, 'train' if train else 'test', transform=dataset_transform,)
 		self.device = device
 		self.transform = transform
 		self.batch_size = batch_size
@@ -502,7 +504,7 @@ if __name__ == '__main__':
 	# test celebA loader
 	print('  TEST CelebALoader')
 	n, N = 3, 16
-	dataloader = CelebALoader(encoder_amount=n, batch_size=N)
+	dataloader = CelebALoader(encoder_amount=n, batch_size=N, scale=False)
 	for i, data in enumerate(dataloader):
 		f_A, I_A, I_B = data
 		assert(f_A.shape == (n, 3, 218, 178))
