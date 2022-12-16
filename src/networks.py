@@ -50,12 +50,23 @@ class InitialCelebBlock(nn.Module):
 	def forward(self, x):
 		return self.net(x)
 
-class LastCelebBlock(nn.Module):
+class LastCelebBlockFace(nn.Module):
 	def __init__(self, Cin):
 		super().__init__()
 		self.net = nn.Sequential(
 			Flatten(),
 			nn.Linear(2483456, 2),
+		)
+	
+	def forward(self, x):
+		return self.net(x)
+
+class LastCelebBlockImage(nn.Module):
+	def __init__(self, Cin):
+		super().__init__()
+		self.net = nn.Sequential(
+			Flatten(),
+			nn.Linear(620864, 2)
 		)
 	
 	def forward(self, x):
@@ -149,9 +160,16 @@ networks = {
 			CelebBlock(8, 16),
 			CelebBlock(16, 32),
 			CelebBlock(32, 64),
-			LastCelebBlock(64)
+			LastCelebBlockFace(64)
 			),
-		'image_encoder': None,
+		'image_encoder': nn.Sequential(
+			InitialCelebBlock(4),
+			CelebBlock(4,8),
+			CelebBlock(8,16),
+			CelebBlock(32,16),
+			CelebBlock(32, 16),
+			LastCelebBlockImage(16)
+		),
 		'image_decoder': None,
 		'discriminator1': None,
 		'discriminator2': None,
