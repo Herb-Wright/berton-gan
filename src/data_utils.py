@@ -12,7 +12,10 @@ from torchvision.datasets.utils import verify_str_arg
 import csv
 import PIL
 from collections import namedtuple
+<<<<<<< HEAD
 from tqdm import trange
+=======
+>>>>>>> 5d235179511478e93733c5b08f9cefc3bcc25218
 
 # CONSTANTS
 
@@ -90,8 +93,6 @@ def _save_response_content(response, destination):
 
 
 # DATA LOADERS FOR CONSTRUCTING BATCHES
-
-
 # -------------------------------------------------------
 # adapted from https://pytorch.org/vision/main/_modules/torchvision/datasets/celeba.html#CelebA
 CSV = namedtuple("CSV", ["header", "index", "data"])
