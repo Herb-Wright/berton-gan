@@ -36,6 +36,9 @@ class CelebBlock(nn.Module):
 			nn.LeakyReLU(0.01), 
 			nn.Conv2d(int(Cin/2), Cout, 1, 1)
 		)
+	
+	def forward(self, x):
+		return self.net(x)
 
 class InitialCelebBlock(nn.Module):
 	def __init__(self, Cout):
@@ -43,6 +46,9 @@ class InitialCelebBlock(nn.Module):
 		self.net = nn.Sequential(
 			nn.Conv2d(1, Cout, 1, 1)
 		)
+	
+	def forward(self, x):
+		return self.net(x)
 
 class LastCelebBlock(nn.Module):
 	def __init__(self, Cin):
@@ -53,6 +59,9 @@ class LastCelebBlock(nn.Module):
 			nn.LeakyReLU(0.01),
 			nn.Linear(4*4*64, 2)
 		)
+	
+	def forward(self, x):
+		return self.net(x)
 
 class Flatten(nn.Module):
 	'''nn.Module that flattens the input'''
