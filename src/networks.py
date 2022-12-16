@@ -166,8 +166,8 @@ networks = {
 			InitialCelebBlock(4),
 			CelebBlock(4,8),
 			CelebBlock(8,16),
+			CelebBlock(16,32),
 			CelebBlock(32,16),
-			CelebBlock(32, 16),
 			LastCelebBlockImage(16)
 		),
 		'image_decoder': None,
