@@ -169,14 +169,13 @@ _celeba_discriminator2:nn.Module = ConcatHelper(
 		DownsampleBertonBlock(64, 64), # (64 x 16 x 16)
 		DownsampleBertonBlock(64, 128), # (64 x 8 x 8),
 		DownsampleBertonBlock(128, 128), # (128 x 4 x 4)
-		DownsampleBertonBlock(128, 256), # (128 x 2 x 2)
 		nn.MaxPool2d(kernel_size=2),
 		Flatten(),
 		nn.Linear(256, 128),
 		nn.LeakyReLU(),
-		nn.Linear(128, 16),
+		nn.Linear(128, 32),
 		nn.LeakyReLU(),
-		nn.Linear(16, 1)
+		nn.Linear(32, 1)
 	)
 )
 
