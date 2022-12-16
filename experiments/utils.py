@@ -8,6 +8,7 @@ import sys
 import os
 import torch
 from typing import Tuple
+from zipfile import ZipFile
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -82,3 +83,38 @@ def load_checkpoint(checkpoint_name:str, path:str=MODELS_PATH) -> Tuple[BertonGa
 	dir = os.path.join(path, checkpoint_name)
 	checkpoint_dict = torch.load(os.path.join(dir, 'checkpoint.pt'))
 	return berton_gan, checkpoint_dict
+
+def colab_download_experiment(experiment_name:str, path:str=MODELS_PATH):
+	'''
+	NOTE: ONLY WORKS IN GOOGLE COLAB
+	downloads an experiment folder as a .zip file
+
+	args:
+	- `experiment_name`: the name of the experiment
+	- `path`: the path to the experiments/models folder
+
+	This function returns nothing
+	'''
+	with ZipFile(experiment_name + '.zip', 'r') as zip_ref:
+		folder_path = os.path.join(MODELS_PATH, experiment_name)
+		for filename in os.listdir(folder_path):
+			zip_ref.write(os.path.join(folder_path, filename))
+	from google.colab import files
+	files.download(experiment_name + '.zip')
+
+
+def load_last_model(type, base_name, verbose):
+	start_epoch = 0
+	# decide whether to load a BertonGan or create one
+	if(not model_path_exists(base_name + '/0')):
+		print('no model exists, creating one')
+		berton_gan = BertonGan(type)
+	else:
+		while model_path_exists(base_name + f'/{start_epoch + 1}'):
+			start_epoch += 1
+		if verbose:
+			print(f'loading model from epoch {start_epoch}')
+		berton_gan = load_berton_gan(base_name + f'/{start_epoch}')
+		berton_gan.train()
+		start_epoch += 1
+	return berton_gan, start_epoch

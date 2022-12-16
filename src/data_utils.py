@@ -12,6 +12,7 @@ from torchvision.datasets.utils import verify_str_arg
 import csv
 import PIL
 from collections import namedtuple
+from tqdm import trange
 
 # CONSTANTS
 
@@ -41,7 +42,7 @@ def download_mnist_data(path:str=DATA_PATH, train:str=True):
 	mnist_train = dset.MNIST(path, train=train, download=True, transform=T.ToTensor())
 	return mnist_train
 
-def download_msceleb(path=DATA_PATH, train=True):
+def download_celeba(path=DATA_PATH, train=True):
 	dataset_folder = os.path.join(path, 'celeba')
 	if not os.path.exists(dataset_folder + '.zip'):
 		print('Downloading zip file from google drive...')
@@ -53,6 +54,7 @@ def download_msceleb(path=DATA_PATH, train=True):
 		print('Unzipping celeba dataset folder...')
 		with zipfile.ZipFile(dataset_folder + '.zip', 'r') as zip_ref:
 			zip_ref.extractall(dataset_folder)
+	if not os.path.exists(os.path.join(dataset_folder, 'celeba/img_align_celeba')):
 		print('Unzipping images in celeba dataset...')
 		with zipfile.ZipFile(os.path.join(dataset_folder, 'celeba/img_align_celeba.zip'), 'r') as zip_ref:
 			zip_ref.extractall(os.path.join(dataset_folder, 'celeba/img_align_celeba'))
@@ -60,10 +62,9 @@ def download_msceleb(path=DATA_PATH, train=True):
 	celeba = CelebA(path, split=('train' if train else 'test'), transform=T.ToTensor())
 	return celeba
 
-# https://drive.google.com/file/d/1ZkjnT495cMBSConUC5MJjeflywyFR4AV/view?usp=sharing
-
 # --------------------------------------------------------
-# these are from https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
+# these are from (altered slightly): 
+# https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
 def _download_file_from_google_drive(id, destination):
 	URL = "https://docs.google.com/uc?export=download"
 
@@ -76,13 +77,6 @@ def _download_file_from_google_drive(id, destination):
 	response = session.get(URL, params = params, stream = True)
 
 	_save_response_content(response, destination)    
-
-# def _get_confirm_token(response):
-# 	for key, value in response.cookies.items():
-# 		print(key)
-# 		if key.startswith('download_warning'):
-# 			return value
-# 	return None
 
 def _save_response_content(response, destination):
 	CHUNK_SIZE = 32768
@@ -97,6 +91,8 @@ def _save_response_content(response, destination):
 
 # DATA LOADERS FOR CONSTRUCTING BATCHES
 
+
+# -------------------------------------------------------
 # adapted from https://pytorch.org/vision/main/_modules/torchvision/datasets/celeba.html#CelebA
 CSV = namedtuple("CSV", ["header", "index", "data"])
 class CelebA(VisionDataset):
@@ -104,7 +100,7 @@ class CelebA(VisionDataset):
 		self,
 		root: str,
 		split: str = "train",
-		target_type: Union[List[str], str] = "attr",
+		target_type: Union[List[str], str] = "identity",
 		transform: Optional[Callable] = None,
 		target_transform: Optional[Callable] = None,
 	) -> None:
@@ -168,7 +164,7 @@ class CelebA(VisionDataset):
 
 
 	def __getitem__(self, index: int) -> Tuple[Any, Any]:
-		X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
+		X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba/img_align_celeba", self.filename[index]))
 
 		target: Any = []
 		for t in self.target_type:
@@ -204,6 +200,7 @@ class CelebA(VisionDataset):
 	def extra_repr(self) -> str:
 		lines = ["Target type: {target_type}", "Split: {split}"]
 		return "\n".join(lines).format(**self.__dict__)
+# -------------------------------------------------------
 
 
 class MnistLoader:
@@ -282,14 +279,81 @@ class MnistLoader:
 		return (F_A, I_A, I_B)
 
 
+class CelebALoader:
+	def __init__(
+		self, 
+		encoder_amount=3, 
+		batch_size=32, 
+		transform=None, 
+		path=DATA_PATH, 
+		train=True, 
+		device=DEVICE
+	):
+		self.dataset = CelebA(path, 'train' if train else 'test', transform=T.ToTensor(),)
+		self.device = device
+		self.transform = transform
+		self.batch_size = batch_size
+		self.encoder_amount = encoder_amount
+		self.classes = {}
+		self.identities = []
+		for idx in trange(len(self.dataset), desc='saving class indices'):
+			_, identity = self.dataset[idx]
+			if identity not in self.classes.keys():
+				self.classes[identity] = []
+				self.identities.append(identity)
+			self.classes[identity].append(idx)
+
+	def __len__(self):
+		return math.ceil(len(self.dataset) / (2 * self.batch_size + self.encoder_amount))
+
+	def __iter__(self):
+		self.count = 0
+		return self
+
+	def __next__(self): # TODO: add in transforms
+		if self.count >= self.__len__():
+			raise StopIteration
+		A_idnty_idx = torch.randint(0, len(self.identities), (1,))[0]
+		A_idnty = self.identities[A_idnty_idx]
+		F_A_idxs = torch.randint(0, len(self.classes[A_idnty]), (self.encoder_amount,))
+		F_A = []
+		for idx in F_A_idxs:
+			x_i = self.dataset[self.classes[A_idnty][idx]][0]
+			if self.transform:
+				x_i = self.transform(x_i)
+			F_A.append(x_i)
+		F_A = torch.stack(F_A).to(self.device)
+		I_A_idxs = torch.randint(0, len(self.classes[A_idnty]), (self.batch_size,))
+		I_A = []
+		for idx in I_A_idxs:
+			x_i = self.dataset[self.classes[A_idnty][idx]][0]
+			if self.transform:
+				x_i = self.transform(x_i)
+			I_A.append(x_i)
+		I_A = torch.stack(I_A).to(self.device)
+		I_B = []
+		while len(I_B) < self.batch_size:
+			random_indices = torch.randint(len(self.dataset), (100,))
+			for i in random_indices:
+				x_i, y_i = self.dataset[i]
+				if y_i != A_idnty:
+					if self.transform:
+						x_i = self.transform(x_i)
+					I_B.append(x_i)
+				if len(I_B) == self.batch_size:
+					break
+		I_B = torch.stack(I_B).to(self.device)
+		self.count += 1
+		return (F_A, I_A, I_B)
+
 
 if __name__ == '__main__':
 
 	# test loading in data
 	print('  TEST download_mnist_data and download_msceleb')
-	download_mnist_data()
-	download_msceleb()
-	# dataset = dset.CelebA('~/school/fall_2022/cs5353/final_project/berton-gan/data', split='train', target_type='identity', transform=T.ToTensor())
+	mnist_data = download_mnist_data()
+	celeba_data = download_celeba()
+	assert(len(celeba_data) == 162770)
 	print('    function runs without error')
 	print('  ...PASSED')
 
@@ -320,7 +384,38 @@ if __name__ == '__main__':
 		my_num += 1 # do a small amount of work
 		my_num -= 1
 	end = time.time()
-	assert(end - start < 8)
 	print(f'    One epoch completed in {end - start} seconds')
+	assert(end - start < 8)
+	print('  ...PASSED')
+
+	# test celebA loader
+	print('  TEST CelebALoader')
+	n, N = 3, 16
+	dataloader = CelebALoader(encoder_amount=n, batch_size=N)
+	for i, data in enumerate(dataloader):
+		f_A, I_A, I_B = data
+		assert(f_A.shape == (n, 3, 218, 178))
+		assert(I_A.shape == (N, 3, 218, 178))
+		assert(I_B.shape == (N, 3, 218, 178))
+		if i >= 5:
+			break
+	print('    CelebALoader returns batch with correct shape')
+	for i, data in enumerate(dataloader):
+		f_A, I_A, I_B = data
+		assert(f_A.dtype == torch.float)
+		assert(I_A.dtype == torch.float)
+		assert(I_B.dtype == torch.float)
+		if i >= 5:
+			break
+	print('    CelebALoader returns batch with correct datatype')
+	import time
+	start = time.time()
+	my_num = 0
+	for i, data in enumerate(dataloader):
+		my_num += 1 # do a small amount of work
+		my_num -= 1
+	end = time.time()
+	print(f'    One epoch completed in {end - start} seconds')
+	assert(end - start < 110)
 	print('  ...PASSED')
 
