@@ -2,7 +2,7 @@
 import os, sys
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 from src import download_mnist_data
-from src.data_utils import download_msceleb
+from src.data_utils import download_celeba
 from experiments.utils import load_berton_gan
 import torch
 import matplotlib.pyplot as plt
@@ -111,19 +111,19 @@ if not _does_img_exist(img_name):
 
 # CelebA attempt
 
-dataset = None
+celeba_dataset = None
 if not (_does_img_exist('celeba_transfer.png') and _does_img_exist('celeba_generated.png')):
-	dataset = 
+	celeba_dataset = download_celeba(train=False)
 
 img_name = f'celeba_transfer.png'
 if not _does_img_exist(img_name):
 	berton_gan = load_berton_gan(f'celeba_attempt')
-	make_transfer_image(img_name, berton_gan, mnist_data_test)
+	make_transfer_image(img_name, berton_gan, celeba_dataset)
 
 img_name = f'celeba_generated.png'
 if not _does_img_exist(img_name):
 	berton_gan = load_berton_gan(f'celeba_attempt')
-	make_generated_image(img_name, berton_gan, mnist_data_test)
+	make_generated_image(img_name, berton_gan, celeba_dataset)
 
 
 

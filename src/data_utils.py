@@ -64,7 +64,7 @@ def download_celeba(path=DATA_PATH, train=True):
 		with zipfile.ZipFile(os.path.join(dataset_folder, 'celeba/img_align_celeba.zip'), 'r') as zip_ref:
 			zip_ref.extractall(os.path.join(dataset_folder, 'celeba/img_align_celeba'))
 		print('[DONE] Returning the dataset object')
-	celeba = CelebA(path, split=('train' if train else 'test'), transform=T.ToTensor())
+	celeba = CelebA(path, split=('train' if train else 'test'), transform=T.Compose([T.Resize((128, 128)), T.ToTensor()]))
 	return celeba
 
 # --------------------------------------------------------
