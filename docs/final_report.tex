@@ -5,6 +5,7 @@
 \usepackage{amsfonts}
 \usepackage{graphicx}
 
+
 \title{BertonGan: a conditional GAN for performing various tasks}
 \author{ Aaron Schindler, Herbert Wright }
 \date{\today}
@@ -45,7 +46,8 @@ Generative Adversarial Networks were introduced by Ian Goodfellow \cite{goodfell
 
 \subsection{BertonGan structure}
 
-Our approach is to train an encoder-decoder while also simultaneously training the discriminator network. Both the decoder and discriminator(s) will be conditioned on a latent variable that provides all necessary facial information. The discriminator(s) will give two values corresponding to whether or not the reconstructed image is fake and if the image also corresponds to the latent variable it has been conditioned on. The four network components of our project are outlined below: \\
+Our approach is to train an encoder-decoder while also simultaneously training the discriminator network. Both the decoder and discriminator(s) will be conditioned on a latent variable that provides all necessary facial information. The discriminator(s) will give two values corresponding to whether or not the 
+reconstructed image is fake and if the image also corresponds to the latent variable it has been conditioned on. The four network components of our project are outlined below: \\
 \begin{enumerate}
 \item Face encoder network: $f_F: \mathbb{R}^{n\times W \times H} \rightarrow \mathbb{R}^{h_f}$
 \begin{enumerate}
@@ -73,7 +75,7 @@ Our approach is to train an encoder-decoder while also simultaneously training t
 \end{enumerate}
 \end{enumerate}
 A visual encoding of the networks described above is given below:
-\begin{figure}
+\begin{figure}[hbt]
     \centering
     \includegraphics[scale=0.25]{images/OurNetwork.png}
     \caption{Figure 1 is a visual representation of our total network, comprising each of the four components above}
@@ -84,7 +86,8 @@ A visual encoding of the networks described above is given below:
 
 \subsection{Training Procedure}
 
-We propose using two datasets to train/test. The first is the built in MNIST dataset from the torchvision package. This dataset will allow us to experiment with our networks on a smaller scale, as the MNIST images are $28 \times 28$ images of numbers rather than people. The next step is to use the celebA dataset which is also built in to the torchvision package. Our original plan to use the MS-Celeb-1M dataset \cite{guo2016ms} has been changed because the dataset is no longer publicly available. The celebA dataset comprises over $200,000$ images of faces, that are \textbf{[INSERT IMAGE SIZE HERE]} in size.
+We propose using two datasets to train/test. The first is the built in MNIST dataset from the torchvision package. This dataset will allow us to experiment with our networks on a smaller scale, as the MNIST images are $28 \times 28$ images of numbers rather than people. The next step is to use the celebA dataset which is also built in to the torchvision package. Our original plan to use the MS-Celeb-1M dataset \cite{guo2016ms} 
+has been changed because the dataset is no longer publicly available. The celebA dataset comprises over $200,000$ images of faces, that are $178 \times 218$ in size.
 
 Given a batch $\beta = (F_A, I_A, I_B)$, where $F_A = n$ faces of person $A$, $I_A = N$ other faces of person $A$, and $I_B = N $ faces of people other than person $A$, we will compute the following quantities:
 \begin{enumerate}
@@ -101,7 +104,9 @@ Given a batch $\beta = (F_A, I_A, I_B)$, where $F_A = n$ faces of person $A$, $I
     \item $D_B = \|I_B - I'_B\|$
 \end{enumerate}
 
-We will optimize $f_D$ by maximizing $R_A, R_B, C_A$ and minimizing $R_{A'}, R_{B'}, C_B$. We also optimize $f_F$ by maximizing $C_A, C_{A'}, C_{B'}$ and minimizing $C_B, D_A$. Additionally, we optimize $f_G, f_I$ by maximizing $R_{A'}, R_{B'}, C_{A'}, C_{B'}$ and minimizing $D_A, D_B$. All parameters are optimized by using stochastic gradient descent. 
+We will optimize $f_D$ by maximizing $R_A, R_B, C_A$ and minimizing $R_{A'}, R_{B'}, C_B$. We also optimize $f_F$ by maximizing $C_A, C_{A'}, C_{B'}$ and minimizing $C_B, D_A$. 
+Additionally, we optimize $f_G, f_I$ by maximizing $R_{A'}, R_{B'}, C_{A'}, C_{B'}$ and 
+minimizing $D_A, D_B$. All parameters are optimized by using stochastic gradient descent. 
 
 After training, we will be able to use $f_F, f_I, \text{ and } f_G$ to perform face swaps. We will then use $f_D$ to identify fake/real images generated using face encoding $h_F$. Additionally, we will use $f_F \text{ and } f_G$ to generate new images of an already learned face.
 
@@ -110,10 +115,151 @@ After training, we will be able to use $f_F, f_I, \text{ and } f_G$ to perform f
 
 \subsection{MNIST Experiments}
 
+Here is the first attempt at generating images from the MNIST dataset. Each image denotes a particular epoch of training,
+where the first and fourth columns are the original images, the second and fifth columns are the style transfer image, and
+the third and sixth columns are the final product images.
+\begin{figure}[hbt]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP5_0.jpg}
+        \caption{(a)}{First epoch of training}
+        \label{fig:sub1}
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP5_4.jpg}
+        \caption{(b)}{5th epoch of training}
+        \label{fig:sub2}
+    \end{minipage}
+\end{figure}
+
+After the first few epochs, there are no distinguishable traits that have been successfully transfered.
+\clearpage
+\begin{figure}[hbt]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP5_9.jpg}
+        \caption{(a)}{10th epoch of training}
+        \label{fig:sub3}
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP5_14.jpg}
+        \caption{(b)}{15th epoch of training}
+        \label{fig:sub4}
+    \end{minipage}
+\end{figure}
+
+The next few epochs begin to collapse into shapes, not entirely formed yet, but also does not just look like noise.
+
+
+\begin{figure}[hbt]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP7_19.jpg}
+        \caption{(a)}{20th epoch of training}
+        \label{fig:sub5}
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP7_24.jpg}
+        \caption{(b)}{25th epoch of training}
+        \label{fig:sub6}
+    \end{minipage}
+\end{figure}
+
+Epochs 20 and 25 continue to increase interperetablility of the images, but still have not fully
+formed numbers.
+
+
+\begin{figure}[hbt]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP7_29.jpg}
+        \caption{(a)}{30th epoch of training}
+        \label{fig:sub7}
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP7_34.jpg}
+        \caption{(b)}{35th epoch of training}
+        \label{fig:sub8}
+    \end{minipage}
+\end{figure}
+
+Epochs 30 and 35 begin to have distinguishable numbers, but they are blurry and the style is not 
+very apparent yet.
+\clearpage
+
+\begin{figure}[hbt]
+    \centering
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP7_39.jpg}
+        \caption{(a)}{40th epoch of training}
+        \label{fig:sub9}
+    \end{minipage}%
+    \begin{minipage}{.5\textwidth}
+        \centering
+        \includegraphics[width=.4\linewidth]{images/EXP7_44.jpg}
+        \caption{(b)}{45th epoch of training}
+        \label{fig:sub10}
+    \end{minipage}
+\end{figure}
+
+Epochs 39 and 44 begin to show much more promising results. Although the images are blurry still
+it is clear that the style transfer is taking place.
+
+\begin{figure}[hbt]
+    \centering
+    \includegraphics[scale=0.5]{images/EXP7_49.jpg}
+    \caption{50th epoch of training}
+    \label{fig:fig2}
+\end{figure}
+
+The last image shown is the final output of our network after 50 epochs of training. There are distinguishable
+numbers in each image, that alos appears to be doing its best to style transfer a different number on top.
+Interestingly enough, where the original image and the style match up is much brighter / more saturated than 
+the other areas of the final image. The downside to this first experiment is that the images still appear blurry.
+\clearpage
+
+To imporove upon this, we trained the encoder and decoder separately from the rest of the network to see if we could get a
+crisper image as output. The results after 50 epochs are below.
+
+\begin{figure}[hbt]
+    \centering
+    \includegraphics[scale=0.5]{images/EXP8_49.jpg}
+    \caption{50th epoch of training using separately trained autoencoder}
+    \label{fig:fig3}
+
+\end{figure}
+
+This way of training works out much better than the previous version. The final output images are much cleaner and 
+distinguishable now. The style transfer still works great on the MNIST dataset, as the number that is output closely
+resembles the style image's number, but takes on the orientation/handwriting of the original image. The output images appear
+to closely resemble the actual dataset.
+
 \subsection{CelebA Experiments}
 
+Unfortunately, because we spent more time on building/improving the MNIST dataset there was not enough time to adequately experiment with
+the celebA dataset. We do have the network partially built, a network that downsamples first in order to be more efficient since the data
+we are working with in the celebA dataset is much larger than MNIST. 
 % the conclusion/future work section
 \section{Conclusion}
+
+In conclusion, it is very clear that when generating deepfakes it is possible to combine two images into one using style transfer. One downside to
+performing this operation was the amount of time and compute resources it takes to train the network. It takes roughly 10 minutes to train using cloud
+computing resources such as google colab for just the MNIST dataset. Because of this, the celebA dataset presented an entirely new challenge since the 
+dataset size is much larger than MNIST and will require a more efficient network.
+
+We believe the future direction of this work is to build an efficient network for celebA by using downsampling in order to decrease the number of parameters 
+that need to be computed at intermediate steps. An added difficulty of the celebA dataset is that becasue images are larger and more robust than that of MNIST
+we also believe that a deeper network will be required. The proposed solution will be to model a network like ResNet, which downsamples in intermediate blocks.
+This not only creates a deeper network, but the size is easily variable since blocks can be added to the model easily. 
 
 \pagebreak
 % \section*{References}
