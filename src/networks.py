@@ -81,8 +81,8 @@ class ResidualBertonBlock(nn.Module):
 	def forward(self, x):
 		identity = x
 		out = self.conv1(x)
-		if self.has_norm:
-			out = self.norm1(out)
+		# if self.has_norm:
+		# 	out = self.norm1(out)
 		out = self.relu(out)
 		out = self.conv2(out)
 		if self.has_norm:
@@ -94,7 +94,7 @@ class ResidualBertonBlock(nn.Module):
 # input: n x 3 x 128 x 128
 # output: n x 32
 _celeba_face_encoder:nn.Module = nn.Sequential(
-	nn.InstanceNorm2d(3, momentum=1, affine=True),
+	# nn.InstanceNorm2d(3, momentum=1, affine=True),
 	DownsampleBertonBlock(3, 32),
 	DownsampleBertonBlock(32, 64), # (64 x 32 x 32)
 	ResidualBertonBlock(64),
@@ -112,7 +112,7 @@ _celeba_face_encoder:nn.Module = nn.Sequential(
 # input: N x 3 x 128 x 128
 # output: N x 32 x 8 x 8
 _celeba_image_encoder:nn.Module = nn.Sequential(
-	nn.InstanceNorm2d(3, momentum=1, affine=True),
+	# nn.InstanceNorm2d(3, momentum=1, affine=True),
 	DownsampleBertonBlock(3, 32),
 	DownsampleBertonBlock(32, 64), # (64 x 32 x 32)
 	ResidualBertonBlock(64),
@@ -138,7 +138,7 @@ _celeba_image_decoder:nn.Module = ConcatHelper(nn.Sequential(
 # input: N x 3 x 128 x 128
 # output: N x 1
 _celeba_discriminator1:nn.Module = nn.Sequential(
-	nn.InstanceNorm2d(3, affine=True),
+	# nn.InstanceNorm2d(3, affine=True),
 	DownsampleBertonBlock(3, 32),
 	DownsampleBertonBlock(32, 64), # (64 x 32 x 32)
 	ResidualBertonBlock(64),
@@ -159,7 +159,7 @@ _celeba_discriminator1:nn.Module = nn.Sequential(
 # output: N x 1
 _celeba_discriminator2:nn.Module = ConcatHelper(
 	prenetwork=nn.Sequential(
-		nn.InstanceNorm2d(3, affine=True),
+		# nn.InstanceNorm2d(3, affine=True),
 		DownsampleBertonBlock(3, 32),
 		DownsampleBertonBlock(32, 64),
 		DownsampleBertonBlock(64, 32),
