@@ -138,7 +138,7 @@ _celeba_image_decoder:nn.Module = ConcatHelper(nn.Sequential(
 # input: N x 3 x 128 x 128
 # output: N x 1
 _celeba_discriminator1:nn.Module = nn.Sequential(
-	nn.InstanceNorm2d(3, momentum=1, affine=True),
+	nn.InstanceNorm2d(3, affine=True),
 	DownsampleBertonBlock(3, 32),
 	DownsampleBertonBlock(32, 64), # (64 x 32 x 32)
 	ResidualBertonBlock(64),
@@ -159,7 +159,7 @@ _celeba_discriminator1:nn.Module = nn.Sequential(
 # output: N x 1
 _celeba_discriminator2:nn.Module = ConcatHelper(
 	prenetwork=nn.Sequential(
-		nn.InstanceNorm2d(3, momentum=1, affine=True),
+		nn.InstanceNorm2d(3, affine=True),
 		DownsampleBertonBlock(3, 32),
 		DownsampleBertonBlock(32, 64),
 		DownsampleBertonBlock(64, 32),
