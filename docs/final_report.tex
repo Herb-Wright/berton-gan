@@ -267,6 +267,24 @@ The output is the similar images but with the number changing as you move in the
 
 \subsection{CelebA Experiments}
 
+We attempted to train on the CelebA dataset, but it took too long and Colab kicked us out before we even got to epoch 4. Because of this the only model we have on the dataset is not very good. Our approach was to resize the images to 128 by 128 and then use deeper networks as part of the BertonGan. Figures 11 and 12 show how bad our network was (albeit after very few epochs of training)
+
+\begin{figure}[hbt]
+	\centering
+	\begin{minipage}{.5\textwidth}
+		\centering
+		\includegraphics[width=.8\linewidth]{images/celeba_transfer.png}
+		\caption{(a)}{Style transfer}
+		\label{fig:sub1}
+	\end{minipage}%
+	\begin{minipage}{.5\textwidth}
+		\centering
+		\includegraphics[width=.8\linewidth]{images/celeba_generated.png}
+		\caption{(b)}{Generated images}
+		\label{fig:sub2}
+	\end{minipage}
+\end{figure}
+
 % Unfortunately, because we spent more time on building/improving the MNIST dataset there was not enough time to adequately experiment with
 % the celebA dataset. We do have the network partially built, a network that downsamples first in order to be more efficient since the data
 % we are working with in the celebA dataset is much larger than MNIST.
