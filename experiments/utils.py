@@ -101,7 +101,7 @@ def colab_download_experiment(experiment_name:str, path:str=MODELS_PATH):
 
 	This function returns nothing
 	'''
-	with ZipFile(experiment_name + '.zip', 'r') as zip_ref:
+	with ZipFile(experiment_name + '.zip', 'w') as zip_ref:
 		folder_path = os.path.join(MODELS_PATH, experiment_name)
 		for filename in os.listdir(folder_path):
 			zip_ref.write(os.path.join(folder_path, filename))
