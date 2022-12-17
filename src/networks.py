@@ -68,15 +68,15 @@ class UpsampleBertonBlock(nn.Module):
 
 
 class ResidualBertonBlock(nn.Module):
-	def __init__(self, channels, leaky=True, norm=False):
+	def __init__(self, channels, leaky=True):
 		super().__init__()
 		self.has_norm = norm
 		self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
 		self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
 		self.relu = nn.LeakyReLU(0.01, inplace=True) if leaky else nn.ReLU(inplace=True)
-		if norm:
-			self.norm1 = nn.InstanceNorm2d(channels, momentum=1)
-			self.norm2 = nn.InstanceNorm2d(channels, momentum=1)
+		# if norm:
+		# 	self.norm1 = nn.InstanceNorm2d(channels, momentum=1)
+		# 	self.norm2 = nn.InstanceNorm2d(channels, momentum=1)
 
 	def forward(self, x):
 		identity = x
@@ -85,8 +85,8 @@ class ResidualBertonBlock(nn.Module):
 		# 	out = self.norm1(out)
 		out = self.relu(out)
 		out = self.conv2(out)
-		if self.has_norm:
-			out = self.norm2(out)
+		# if self.has_norm:
+		# 	out = self.norm2(out)
 		out = out + identity
 		out = self.relu(out)
 		return out
