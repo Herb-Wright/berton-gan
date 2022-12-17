@@ -47,7 +47,8 @@ def save_berton_gan(gan:BertonGan, name:str, path:str=MODELS_PATH, type:str='tor
 def load_berton_gan(name:str, path:str=MODELS_PATH) -> BertonGan:
 	dir = os.path.join(path, name)
 	if os.path.exists(os.path.join(dir, 'berton_gan.pickle')):
-		return pickle.load(os.path.join(dir, 'berton_gan.pickle'))
+		with open(os.path.join(dir, 'berton_gan.pickle'), 'rb') as f:
+			return pickle.load(f)
 	berton_gan = BertonGan('empty')
 	berton_gan.face_encoder = torch.jit.load(os.path.join(dir, 'face_encoder.pt')).to(DEVICE)
 	berton_gan.image_encoder = torch.jit.load(os.path.join(dir, 'image_encoder.pt')).to(DEVICE)
