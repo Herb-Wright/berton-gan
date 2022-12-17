@@ -38,7 +38,7 @@ def save_berton_gan(gan:BertonGan, name:str, path:str=MODELS_PATH, type:str='tor
 		torch.jit.script(gan.discriminator1).save(os.path.join(dir, 'discriminator1.pt'))
 		torch.jit.script(gan.discriminator2).save(os.path.join(dir, 'discriminator2.pt'))
 	if type == 'pickle':
-		with open(os.path.join(dir, 'gan.pickle'), 'wb') as f:
+		with open(os.path.join(dir, 'berton_gan.pickle'), 'wb') as f:
 			pickle.dump(gan, f)
 	else:
 		raise Exception('invalid saving type')
