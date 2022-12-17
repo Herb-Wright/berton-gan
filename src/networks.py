@@ -34,7 +34,7 @@ class ConcatHelper(nn.Module):
 	def forward(self, x:torch.Tensor, y:torch.Tensor) -> torch.Tensor:
 		y_ndim = y.ndim
 		
-		if self.prenetwork:
+		if self.prenetwork is not None:
 			x = self.prenetwork(x)
 		if x.shape[0] != y.shape[0] and y_ndim > 1:
 			y = torch.mean(y.clone(), dim=0, keepdim=True)
@@ -70,23 +70,15 @@ class UpsampleBertonBlock(nn.Module):
 class ResidualBertonBlock(nn.Module):
 	def __init__(self, channels, leaky=True):
 		super().__init__()
-		self.has_norm = norm
 		self.conv1 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
 		self.conv2 = nn.Conv2d(channels, channels, kernel_size=3, padding='same')
 		self.relu = nn.LeakyReLU(0.01, inplace=True) if leaky else nn.ReLU(inplace=True)
-		# if norm:
-		# 	self.norm1 = nn.InstanceNorm2d(channels, momentum=1)
-		# 	self.norm2 = nn.InstanceNorm2d(channels, momentum=1)
 
 	def forward(self, x):
 		identity = x
 		out = self.conv1(x)
-		# if self.has_norm:
-		# 	out = self.norm1(out)
 		out = self.relu(out)
 		out = self.conv2(out)
-		# if self.has_norm:
-		# 	out = self.norm2(out)
 		out = out + identity
 		out = self.relu(out)
 		return out
@@ -384,3 +376,12 @@ class Unflatten(nn.Module):
     self.W = W
   def forward(self, x):
     return x.view(self.N, self.C, self.H, self.W)
+
+
+if __name__ == '__main__':
+	berton_gan = BertonGan('celeba')
+	import os, sys
+	sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
+	from experiments.utils import save_berton_gan, load_last_model
+	berton_gan, _ = load_last_model('celeba', 'some_name', True)
+	save_berton_gan(berton_gan, 'some_dummy_name', type='pickle')

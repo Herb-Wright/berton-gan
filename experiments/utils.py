@@ -8,6 +8,7 @@ import sys
 import os
 import torch
 from typing import Tuple
+import pickle
 from zipfile import ZipFile
 
 DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
@@ -36,12 +37,17 @@ def save_berton_gan(gan:BertonGan, name:str, path:str=MODELS_PATH, type:str='tor
 		torch.jit.script(gan.image_decoder).save(os.path.join(dir, 'image_decoder.pt'))
 		torch.jit.script(gan.discriminator1).save(os.path.join(dir, 'discriminator1.pt'))
 		torch.jit.script(gan.discriminator2).save(os.path.join(dir, 'discriminator2.pt'))
+	if type == 'pickle':
+		with open(os.path.join(dir, 'gan.pickle'), 'wb') as f:
+			pickle.dump(gan, f)
 	else:
 		raise Exception('invalid saving type')
 
 
 def load_berton_gan(name:str, path:str=MODELS_PATH) -> BertonGan:
 	dir = os.path.join(path, name)
+	if os.path.exists(os.path.join(dir, 'berton_gan.pickle')):
+		return pickle.load(os.path.join(dir, 'berton_gan.pickle'))
 	berton_gan = BertonGan('empty')
 	berton_gan.face_encoder = torch.jit.load(os.path.join(dir, 'face_encoder.pt')).to(DEVICE)
 	berton_gan.image_encoder = torch.jit.load(os.path.join(dir, 'image_encoder.pt')).to(DEVICE)
@@ -50,7 +56,7 @@ def load_berton_gan(name:str, path:str=MODELS_PATH) -> BertonGan:
 	berton_gan.discriminator2 = torch.jit.load(os.path.join(dir, 'discriminator2.pt')).to(DEVICE)
 	return berton_gan
 
-def save_checkpoint(gan:BertonGan, checkpoint:dict, checkpoint_name:str, path:str=MODELS_PATH):
+def save_checkpoint(gan:BertonGan, checkpoint:dict, checkpoint_name:str, path:str=MODELS_PATH, type='torchscript'):
 	'''
 	saves a checkpoint
 
@@ -62,7 +68,7 @@ def save_checkpoint(gan:BertonGan, checkpoint:dict, checkpoint_name:str, path:st
 
 	this function returns nothing
 	'''
-	save_berton_gan(gan, checkpoint_name, path)
+	save_berton_gan(gan, checkpoint_name, path, type=type)
 	dir = os.path.join(path, checkpoint_name)
 	create_dir_if_not_exists(dir)
 	torch.save(checkpoint, os.path.join(dir, 'checkpoint.pt'))
